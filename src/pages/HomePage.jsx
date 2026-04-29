@@ -85,8 +85,7 @@ export default function HomePage() {
           <div className="hero-divider" key={`div-${heroSlide}`}>⬥ ⬦ ⬥ ⬦ ⬥</div>
           <p className="hero-subtitle" key={`sub-${heroSlide}`}>{slide.subtitle}</p>
           <p className="hero-desc font-crimson" key={`desc-${heroSlide}`}>
-            Timeless Indian fashion — where ancient heritage meets modern grace.
-            Discover our exclusive collection of handcrafted traditional wear.
+            Srikalahasthikala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Srikalahasthikala is vowed to provide eco-friendly swadeshi products
           </p>
           <div className="hero-ctas" key={`cta-${heroSlide}`}>
             <Link to={slide.link} className="btn btn-primary btn-lg">Shop Now <ChevronRight size={18} /></Link>

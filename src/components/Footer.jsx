@@ -22,8 +22,7 @@ export default function Footer() {
               <img src="/logo.png" alt="HASHTHAKALA Logo" className="footer-logo-image" />
             </div>
             <p className="footer-desc">
-              Celebrating the timeless beauty of Indian craftsmanship. 
-              Each piece is a story woven in tradition, culture, and grace.
+              Srikalahasthikala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Srikalahasthikala is vowed to provide eco-friendly swadeshi products
             </p>
             <div className="footer-socials">
               <a href="#" className="social-btn" aria-label="Facebook">FB</a>
@@ -77,29 +76,22 @@ export default function Footer() {
               <div className="contact-item">
                 <Phone size={15} />
                 <div>
-                  <p className="contact-label">Customer Support</p>
-                  <a href="tel:+919876543210" className="contact-value">+91 98765 43210</a>
-                </div>
-              </div>
-              <div className="contact-item">
-                <Phone size={15} />
-                <div>
-                  <p className="contact-label">Business Enquiry</p>
-                  <a href="tel:+919123456789" className="contact-value">+91 91234 56789</a>
+                  <p className="contact-label">Phone</p>
+                  <a href="tel:8897270798" className="contact-value">8897270798</a>
                 </div>
               </div>
               <div className="contact-item">
                 <Mail size={15} />
                 <div>
                   <p className="contact-label">Email Us</p>
-                  <a href="mailto:hello@hashthakala.com" className="contact-value">hello@hashthakala.com</a>
+                  <a href="mailto:srihastikala@gmail.com" className="contact-value">srihastikala@gmail.com</a>
                 </div>
               </div>
               <div className="contact-item">
                 <MapPin size={15} />
                 <div>
                   <p className="contact-label">Store Location</p>
-                  <span className="contact-value">Jaipur, Rajasthan, India</span>
+                  <span className="contact-value">Srikalahasthi, Andhra Pradesh, India</span>
                 </div>
               </div>
             </div>
@@ -131,7 +123,7 @@ export default function Footer() {
       <div className="footer-bottom">
         <div className="container">
           <div className="footer-bottom-inner">
-            <p className="footer-copy">© 2024 HASHTHAKALA. All rights reserved.</p>
+            <p className="footer-copy">© 2024 Srikalahasthikala. All rights reserved.</p>
             <div className="footer-bottom-links">
               <a href="#" className="footer-link-sm">Privacy Policy</a>
               <span>·</span>

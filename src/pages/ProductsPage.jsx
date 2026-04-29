@@ -22,6 +22,16 @@ export default function ProductsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
 
+  // Lock body scroll when mobile filter panel is open
+  useEffect(() => {
+    if (filtersOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [filtersOpen]);
+
   const [filters, setFilters] = useState({
     category: params.get('category') || '',
     minPrice: params.get('minPrice') || '',
@@ -76,6 +86,15 @@ export default function ProductsPage() {
           <p className="products-page-count">{total} products found</p>
         </div>
       </div>
+
+      {/* Mobile filter backdrop — clicking it closes the sidebar */}
+      {filtersOpen && (
+        <div
+          className="filters-backdrop"
+          onClick={() => setFiltersOpen(false)}
+          aria-label="Close filters"
+        />
+      )}
 
       <div className="container">
         <div className="products-layout">

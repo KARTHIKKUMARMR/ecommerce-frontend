@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, User, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -9,48 +9,83 @@ import './CheckoutPage.css';
 
 const STEPS = ['Address', 'Payment', 'Review'];
 
+// Payment options definition
+const PAYMENT_OPTIONS = [
+  { value: 'COD',        label: 'Cash on Delivery', icon: '💰', desc: 'Pay when you receive your order',       type: 'COD'    },
+  { value: 'UPI',        label: 'UPI Payment',       icon: '📱', desc: 'Google Pay, PhonePe, Paytm, etc.',     type: 'Online' },
+  { value: 'Card',       label: 'Credit/Debit Card', icon: '💳', desc: 'Visa, Mastercard, Rupay',               type: 'Online' },
+  { value: 'NetBanking', label: 'Net Banking',        icon: '🏦', desc: 'All major banks supported',             type: 'Online' },
+];
+
 export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0);
-  const [placing, setPlacing] = useState(false);
+  const [step, setStep]           = useState(0);
+  const [placing, setPlacing]     = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [coupon, setCoupon]       = useState('');
+  const [discount, setDiscount]   = useState(0);
+  // blockedMethods: set of 'COD' or 'Online' that are not allowed by any cart item
+  const [blockedMethods, setBlockedMethods] = useState(new Set());
 
   const shipping = cartTotal > 999 ? 0 : 99;
-  const total = cartTotal + shipping;
+  const total    = cartTotal + shipping;
+
+  // Guest info (only used when user is not logged in)
+  const [guestInfo, setGuestInfo] = useState({ name: '', phone: '', email: '' });
 
   const [address, setAddress] = useState({
-    name: user?.name || '',
-    phone: user?.phone || '',
-    street: '',
-    city: '',
-    state: '',
+    name:    user?.name    || '',
+    phone:   user?.phone   || '',
+    street:  '',
+    city:    '',
+    state:   '',
     pincode: '',
   });
-  const [paymentMethod, setPaymentMethod] = useState('COD');
-  const [coupon, setCoupon] = useState('');
-  const [discount, setDiscount] = useState(0);
 
-  if (!user) return (
-    <div className="checkout-login-prompt">
-      <h2>Please sign in to checkout</h2>
-      <Link to="/login" className="btn btn-primary btn-lg">Sign In</Link>
-    </div>
-  );
+  // Redirect if cart is empty
+  useEffect(() => {
+    if (cart.length === 0) navigate('/cart');
+  }, [cart, navigate]);
 
-  if (cart.length === 0) {
-    navigate('/cart');
-    return null;
-  }
+  // Determine blocked payment methods from cart products
+  // We read allowedPaymentMethods from products already in cart (stored when added)
+  useEffect(() => {
+    const blocked = new Set();
+    cart.forEach(item => {
+      const allowed = item.allowedPaymentMethods;
+      if (allowed && allowed.length > 0) {
+        if (!allowed.includes('COD'))    blocked.add('COD');
+        if (!allowed.includes('Online')) blocked.add('Online');
+      }
+    });
+    setBlockedMethods(blocked);
+    // Auto-switch payment if current selection is blocked
+    if (blocked.has('COD') && paymentMethod === 'COD') setPaymentMethod('UPI');
+    if (blocked.has('Online') && paymentMethod !== 'COD') setPaymentMethod('COD');
+  }, [cart]);
 
+  if (cart.length === 0) return null;
+
+  // ── Address step validation ──────────────────────────────────────────────
   const handleAddressNext = (e) => {
     e.preventDefault();
+    // For guests, validate guest info first
+    if (!user) {
+      if (!guestInfo.name.trim() || !guestInfo.phone.trim()) {
+        return toast.error('Please enter your name and phone number');
+      }
+    }
     const required = ['name', 'phone', 'street', 'city', 'state', 'pincode'];
-    if (required.some(k => !address[k])) { toast.error('Please fill all address fields'); return; }
+    if (required.some(k => !address[k])) {
+      return toast.error('Please fill all address fields');
+    }
     setStep(1);
   };
 
+  // ── Coupon logic ─────────────────────────────────────────────────────────
   const handleApplyCoupon = () => {
     if (coupon.toUpperCase() === 'HERITAGE10') {
       setDiscount(Math.round(total * 0.1));
@@ -60,18 +95,21 @@ export default function CheckoutPage() {
     }
   };
 
+  // ── Place Order ───────────────────────────────────────────────────────────
   const handlePlaceOrder = async () => {
     setPlacing(true);
-    const orderData = {
-      items: cart.map(i => ({
-        product: i._id,
-        name: i.name,
-        image: i.images?.[0],
-        price: i.price,
-        quantity: i.quantity,
-        size: i.selectedSize,
-        color: i.selectedColor,
-      })),
+    const items = cart.map(i => ({
+      product:  i._id,
+      name:     i.name,
+      image:    i.images?.[0],
+      price:    i.price,
+      quantity: i.quantity,
+      size:     i.selectedSize,
+      color:    i.selectedColor,
+    }));
+
+    const orderPayload = {
+      items,
       shippingAddress: address,
       paymentMethod,
       subtotal: cartTotal,
@@ -81,14 +119,27 @@ export default function CheckoutPage() {
     };
 
     try {
-      const { data } = await api.post('/orders', orderData);
+      let data;
+      if (user) {
+        // Logged-in order
+        const res = await api.post('/orders', orderPayload);
+        data = res.data;
+      } else {
+        // Guest order — send guestInfo along
+        const res = await api.post('/orders/guest', { ...orderPayload, guestInfo });
+        data = res.data;
+      }
       clearCart();
       navigate(`/order-confirm/${data._id}`);
     } catch (err) {
-      toast.error('Failed to place order');
+      toast.error(err.response?.data?.message || 'Failed to place order. Please try again.');
     } finally {
       setPlacing(false);
     }
+  };
+
+  const isMethodBlocked = (opt) => {
+    return blockedMethods.has(opt.type);
   };
 
   return (
@@ -96,6 +147,21 @@ export default function CheckoutPage() {
       <div className="container-sm">
         <h1 className="page-title">Checkout</h1>
         <div className="ornament-divider">⬥ ⬦ ⬥</div>
+
+        {/* Guest banner */}
+        {!user && (
+          <div style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid var(--gold)', borderRadius: 10, padding: '14px 18px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <User size={20} color="var(--gold)" />
+            <div>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                Checking out as <strong style={{ color: 'var(--gold)' }}>Guest</strong>
+              </p>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                <Link to="/login" style={{ color: 'var(--gold)' }}>Sign in</Link> to save your order history
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Step indicator */}
         <div className="checkout-steps">
@@ -110,66 +176,110 @@ export default function CheckoutPage() {
 
         <div className="checkout-layout">
           <div className="checkout-main">
-            {/* Step 0: Address */}
+
+            {/* ── Step 0: Address ── */}
             {step === 0 && (
               <form onSubmit={handleAddressNext} className="checkout-card card">
                 <h3 className="checkout-card-title">Delivery Address</h3>
+
+                {/* Guest info fields (only for non-logged-in users) */}
+                {!user && (
+                  <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: 16, marginBottom: 20, border: '1px solid var(--border)' }}>
+                    <p style={{ color: 'var(--gold)', fontWeight: 600, marginBottom: 12, fontSize: '0.9rem' }}>
+                      👤 Guest Information
+                    </p>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label className="form-label">Your Name *</label>
+                        <input className="form-input" required placeholder="Full name" value={guestInfo.name}
+                          onChange={e => setGuestInfo(p => ({ ...p, name: e.target.value }))} />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Mobile Number *</label>
+                        <input className="form-input" required placeholder="+91 00000 00000" value={guestInfo.phone}
+                          onChange={e => setGuestInfo(p => ({ ...p, phone: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Email <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>(Optional — for order updates)</span></label>
+                      <input className="form-input" type="email" placeholder="your@email.com" value={guestInfo.email}
+                        onChange={e => setGuestInfo(p => ({ ...p, email: e.target.value }))} />
+                    </div>
+                  </div>
+                )}
+
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">Full Name *</label>
-                    <input className="form-input" value={address.name} onChange={e => setAddress(p => ({ ...p, name: e.target.value }))} placeholder="Your full name" />
+                    <label className="form-label">Recipient Name *</label>
+                    <input className="form-input" value={address.name} placeholder="Name on delivery" onChange={e => setAddress(p => ({ ...p, name: e.target.value }))} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Phone *</label>
-                    <input className="form-input" value={address.phone} onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))} placeholder="+91 00000 00000" />
+                    <input className="form-input" value={address.phone} placeholder="+91 00000 00000" onChange={e => setAddress(p => ({ ...p, phone: e.target.value }))} />
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">Street Address *</label>
-                  <input className="form-input" value={address.street} onChange={e => setAddress(p => ({ ...p, street: e.target.value }))} placeholder="House no., Building, Street, Area" />
+                  <input className="form-input" value={address.street} placeholder="House no., Building, Street, Area" onChange={e => setAddress(p => ({ ...p, street: e.target.value }))} />
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label className="form-label">City *</label>
-                    <input className="form-input" value={address.city} onChange={e => setAddress(p => ({ ...p, city: e.target.value }))} placeholder="City" />
+                    <input className="form-input" value={address.city} placeholder="City" onChange={e => setAddress(p => ({ ...p, city: e.target.value }))} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">State *</label>
-                    <input className="form-input" value={address.state} onChange={e => setAddress(p => ({ ...p, state: e.target.value }))} placeholder="State" />
+                    <input className="form-input" value={address.state} placeholder="State" onChange={e => setAddress(p => ({ ...p, state: e.target.value }))} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Pincode *</label>
-                    <input className="form-input" value={address.pincode} onChange={e => setAddress(p => ({ ...p, pincode: e.target.value }))} placeholder="000000" maxLength={6} />
+                    <input className="form-input" value={address.pincode} placeholder="000000" maxLength={6} onChange={e => setAddress(p => ({ ...p, pincode: e.target.value }))} />
                   </div>
                 </div>
-                <button type="submit" className="btn btn-primary btn-lg">Continue to Payment <ChevronRight size={18} /></button>
+                <button type="submit" className="btn btn-primary btn-lg">
+                  Continue to Payment <ChevronRight size={18} />
+                </button>
               </form>
             )}
 
-            {/* Step 1: Payment */}
+            {/* ── Step 1: Payment ── */}
             {step === 1 && (
               <div className="checkout-card card">
                 <h3 className="checkout-card-title">Payment Method</h3>
+
+                {blockedMethods.size > 0 && (
+                  <div style={{ background: 'rgba(255,107,107,0.1)', border: '1px solid rgba(255,107,107,0.4)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: '0.85rem', color: '#ff9999' }}>
+                    ⚠️ {blockedMethods.has('COD')
+                      ? 'One or more items in your cart require online payment only.'
+                      : 'One or more items are available for Cash on Delivery only.'}
+                  </div>
+                )}
+
                 <div className="payment-options">
-                  {[
-                    { value: 'COD', label: 'Cash on Delivery', icon: '💰', desc: 'Pay when you receive your order' },
-                    { value: 'UPI', label: 'UPI Payment', icon: '📱', desc: 'Pay via Google Pay, PhonePe, etc.' },
-                    { value: 'Card', label: 'Credit/Debit Card', icon: '💳', desc: 'Visa, Mastercard, Rupay' },
-                    { value: 'NetBanking', label: 'Net Banking', icon: '🏦', desc: 'All major banks supported' },
-                  ].map(opt => (
-                    <label key={opt.value} className={`payment-option ${paymentMethod === opt.value ? 'active' : ''}`}>
-                      <input type="radio" name="payment" value={opt.value} checked={paymentMethod === opt.value} onChange={() => setPaymentMethod(opt.value)} className="sr-only" />
-                      <span className="payment-icon">{opt.icon}</span>
-                      <div>
-                        <p className="payment-label">{opt.label}</p>
-                        <p className="payment-desc">{opt.desc}</p>
-                      </div>
-                      <div className="payment-check">{paymentMethod === opt.value && <Check size={14} />}</div>
-                    </label>
-                  ))}
+                  {PAYMENT_OPTIONS.map(opt => {
+                    const blocked = isMethodBlocked(opt);
+                    return (
+                      <label key={opt.value}
+                        className={`payment-option ${paymentMethod === opt.value ? 'active' : ''} ${blocked ? 'disabled' : ''}`}
+                        style={{ opacity: blocked ? 0.4 : 1, cursor: blocked ? 'not-allowed' : 'pointer' }}
+                      >
+                        <input type="radio" name="payment" value={opt.value}
+                          checked={paymentMethod === opt.value}
+                          disabled={blocked}
+                          onChange={() => !blocked && setPaymentMethod(opt.value)}
+                          className="sr-only"
+                        />
+                        <span className="payment-icon">{opt.icon}</span>
+                        <div>
+                          <p className="payment-label">{opt.label}</p>
+                          <p className="payment-desc">{blocked ? '⛔ Not available for your cart items' : opt.desc}</p>
+                        </div>
+                        <div className="payment-check">{paymentMethod === opt.value && <Check size={14} />}</div>
+                      </label>
+                    );
+                  })}
                 </div>
 
-                {/* Coupon */}
                 <div className="coupon-section">
                   <h4>Have a coupon?</h4>
                   <div className="coupon-row">
@@ -186,11 +296,12 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* Step 2: Review */}
+            {/* ── Step 2: Review ── */}
             {step === 2 && (
               <div className="checkout-card card">
-                <h3 className="checkout-card-title">Review & Place Order</h3>
+                <h3 className="checkout-card-title">Review &amp; Place Order</h3>
                 <div className="review-section">
+                  {!user && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 4 }}>Guest: {guestInfo.name} · {guestInfo.phone}</p>}
                   <h4>Delivery to:</h4>
                   <p className="review-text">{address.name} · {address.phone}</p>
                   <p className="review-text">{address.street}, {address.city}, {address.state} - {address.pincode}</p>
@@ -220,7 +331,7 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Order summary sidebar */}
+          {/* Order Summary Sidebar */}
           <div className="checkout-summary card">
             <h3 className="summary-title">Order Summary</h3>
             <div className="summary-ornament">⬥ ⬦ ⬥</div>

@@ -13,8 +13,9 @@ export default function AdminProducts() {
   const [uploading, setUploading]     = useState(false); // tracks upload in progress
 
   const [formData, setFormData] = useState({
-    name: '', category: 'Sarees', price: '', originalPrice: '',
-    stock: '', description: '', sizes: '', colors: '', tags: '',
+    name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '',
+    sizes: '', colors: '', tags: '',
+    allowedPaymentMethods: ['COD', 'Online'], // default: both allowed
   });
 
   // Image state
@@ -55,11 +56,14 @@ export default function AdminProducts() {
         sizes:         (product.sizes || []).join(', '),
         colors:        (product.colors || []).join(', '),
         tags:          (product.tags || []).join(', '),
+        allowedPaymentMethods: product.allowedPaymentMethods?.length > 0
+          ? product.allowedPaymentMethods
+          : ['COD', 'Online'],
       });
       setImagePreviews(product.images || []);
     } else {
       setEditingId(null);
-      setFormData({ name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '', sizes: '', colors: '', tags: '' });
+      setFormData({ name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '', sizes: '', colors: '', tags: '', allowedPaymentMethods: ['COD', 'Online'] });
       setImagePreviews([]);
     }
     setIsModalOpen(true);
@@ -121,6 +125,13 @@ export default function AdminProducts() {
       if (formData.sizes)  fd.append('sizes',  formData.sizes);
       if (formData.colors) fd.append('colors', formData.colors);
       if (formData.tags)   fd.append('tags',   formData.tags);
+
+      // Validate payment methods — at least one must be selected
+      if (!formData.allowedPaymentMethods || formData.allowedPaymentMethods.length === 0) {
+        setUploading(false);
+        return toast.error('Please allow at least one payment method');
+      }
+      fd.append('allowedPaymentMethods', JSON.stringify(formData.allowedPaymentMethods));
 
       // Step 2: Append each image file — the key must match upload.array('images', 5)
       imageFiles.forEach(file => fd.append('images', file));
@@ -444,6 +455,44 @@ export default function AdminProducts() {
                 <label className="form-label">Description *</label>
                 <textarea required className="form-input" rows="4" placeholder="Describe the product..."
                   value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+              </div>
+
+              {/* Payment Method Control — Admin sets this per product */}
+              <div className="form-group" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: 16 }}>
+                <label className="form-label" style={{ marginBottom: 12 }}>
+                  💳 Allowed Payment Methods *
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: 8 }}>
+                    (controls what customers can use at checkout)
+                  </span>
+                </label>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {['COD', 'Online'].map(method => {
+                    const label = method === 'COD' ? '💰 Cash on Delivery' : '📱 Online Payment (UPI/Card)';
+                    const checked = (formData.allowedPaymentMethods || []).includes(method);
+                    return (
+                      <label key={method} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 16px', border: `1px solid ${checked ? 'var(--gold)' : 'var(--border)'}`, borderRadius: 8, background: checked ? 'rgba(201,168,76,0.08)' : 'transparent', flex: 1, transition: 'all 0.2s' }}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const current = formData.allowedPaymentMethods || [];
+                            const updated = checked
+                              ? current.filter(m => m !== method)
+                              : [...current, method];
+                            setFormData({ ...formData, allowedPaymentMethods: updated });
+                          }}
+                          style={{ accentColor: 'var(--gold)', width: 16, height: 16 }}
+                        />
+                        <span style={{ color: checked ? 'var(--gold)' : 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: checked ? 600 : 400 }}>
+                          {label}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {(!formData.allowedPaymentMethods || formData.allowedPaymentMethods.length === 0) && (
+                  <p style={{ color: '#ff6b6b', fontSize: '0.8rem', marginTop: 8 }}>⚠️ At least one payment method must be selected</p>
+                )}
               </div>
 
               {/* Submit button */}

@@ -1,35 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Edit2, Trash2, Search, X, Upload, Image } from 'lucide-react';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
-// Mock data in case DB is offline
-const MOCK_PRODUCTS = [
-  { _id: '1', name: 'Royal Banarasi Silk Saree', category: 'Sarees', price: 4999, originalPrice: 7999, stock: 15, images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100'] },
-  { _id: '2', name: 'Anarkali Floral Kurti', category: 'Kurtis', price: 1299, originalPrice: 1999, stock: 50, images: ['https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=100'] },
-];
-
 export default function AdminProducts() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(false);
+  const [products, setProducts]       = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [fetchError, setFetchError]   = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [search, setSearch] = useState('');
+  const [editingId, setEditingId]     = useState(null);
+  const [search, setSearch]           = useState('');
+  const [uploading, setUploading]     = useState(false); // tracks upload in progress
 
   const [formData, setFormData] = useState({
-    name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: ''
+    name: '', category: 'Sarees', price: '', originalPrice: '',
+    stock: '', description: '', sizes: '', colors: '', tags: '',
   });
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // Image state
+  const [imageFiles, setImageFiles]     = useState([]);   // File objects chosen by user
+  const [imagePreviews, setImagePreviews] = useState([]); // Preview URLs for display
+  const fileInputRef = useRef(null);
 
+  useEffect(() => { fetchProducts(); }, []);
+
+  // ─── Fetch all products ────────────────────────────────────────────────────
   const fetchProducts = async () => {
     setLoading(true);
     setFetchError(false);
     try {
-      // Use /admin/products (authenticated) for accurate admin data
       const { data } = await api.get('/admin/products');
       setProducts(Array.isArray(data) ? data : (data.products || []));
     } catch (err) {
@@ -41,79 +40,118 @@ export default function AdminProducts() {
     }
   };
 
-  const [imageFiles, setImageFiles] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-
+  // ─── Open modal (add or edit) ──────────────────────────────────────────────
   const handleOpenModal = (product = null) => {
     setImageFiles([]);
     if (product) {
       setEditingId(product._id);
       setFormData({
-        name: product.name,
-        category: product.category,
-        price: product.price,
+        name:          product.name,
+        category:      product.category,
+        price:         product.price,
         originalPrice: product.originalPrice || '',
-        stock: product.stock,
-        description: product.description || ''
+        stock:         product.stock,
+        description:   product.description || '',
+        sizes:         (product.sizes || []).join(', '),
+        colors:        (product.colors || []).join(', '),
+        tags:          (product.tags || []).join(', '),
       });
       setImagePreviews(product.images || []);
     } else {
       setEditingId(null);
-      setFormData({ name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '' });
+      setFormData({ name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '', sizes: '', colors: '', tags: '' });
       setImagePreviews([]);
     }
     setIsModalOpen(true);
   };
 
+  // ─── Handle file selection ─────────────────────────────────────────────────
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     setImageFiles(files);
-    
-    // Generate preview URLs
+    // Generate local blob preview URLs so the user sees the images before upload
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
   };
 
+  // ─── Remove a selected image preview ──────────────────────────────────────
+  const removeImage = (index) => {
+    const newFiles    = imageFiles.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+    setImagePreviews(newPreviews);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // ─── Submit product form ───────────────────────────────────────────────────
+  /**
+   * HOW THIS WORKS:
+   * 1. We create a FormData object (this is how browsers send files over HTTP).
+   * 2. We append all text fields (name, price, etc.) as key-value pairs.
+   * 3. We append each image File object — the browser handles the encoding.
+   * 4. We send the FormData to the backend.
+   * 5. On the backend, multer-storage-cloudinary picks up the files,
+   *    uploads them to Cloudinary, and gives us back secure URLs.
+   * 6. The backend saves those URLs in MongoDB.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!formData.name.trim())        return toast.error('Product name is required');
+    if (!formData.price)              return toast.error('Price is required');
+    if (!formData.stock)              return toast.error('Stock is required');
+    if (!formData.description.trim()) return toast.error('Description is required');
+    if (!editingId && imageFiles.length === 0) {
+      return toast.error('Please upload at least one product image');
+    }
+
+    setUploading(true);
     try {
-      // Convert image files to Base64 to send to live backend
-      const base64Images = await Promise.all(imageFiles.map(file => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        });
-      }));
+      // Step 1: Build FormData
+      const fd = new FormData();
+      fd.append('name',          formData.name.trim());
+      fd.append('category',      formData.category);
+      fd.append('price',         formData.price);
+      fd.append('originalPrice', formData.originalPrice || '0');
+      fd.append('stock',         formData.stock);
+      fd.append('description',   formData.description.trim());
+      if (formData.sizes)  fd.append('sizes',  formData.sizes);
+      if (formData.colors) fd.append('colors', formData.colors);
+      if (formData.tags)   fd.append('tags',   formData.tags);
 
-      const finalImages = base64Images.length > 0 ? base64Images : imagePreviews.length > 0 ? imagePreviews : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100'];
+      // Step 2: Append each image file — the key must match upload.array('images', 5)
+      imageFiles.forEach(file => fd.append('images', file));
 
-      // Ensure explicit parsing of numerical fields
-      const payload = {
-        ...formData,
-        price: Number(formData.price),
-        originalPrice: formData.originalPrice ? Number(formData.originalPrice) : 0,
-        stock: Number(formData.stock),
-        images: finalImages
-      };
-
+      // Step 3: Send to backend
+      // IMPORTANT: Do NOT set Content-Type header manually when using FormData.
+      // The browser sets it automatically with the correct multipart boundary.
       if (editingId) {
-        const { data } = await api.put(`/admin/products/${editingId}`, payload);
+        const { data } = await api.put(`/admin/products/${editingId}`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         setProducts(prev => prev.map(p => p._id === editingId ? data : p));
-        toast.success('Product updated successfully!');
+        toast.success('✅ Product updated successfully!');
       } else {
-        const { data } = await api.post('/admin/products', payload);
+        const { data } = await api.post('/admin/products', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         setProducts(prev => [data, ...prev]);
-        toast.success('Product added successfully!');
+        toast.success('✅ Product added successfully!');
       }
-      
+
       setIsModalOpen(false);
     } catch (err) {
       console.error('Product save error:', err);
       toast.error(err.response?.data?.message || 'Failed to save product');
+    } finally {
+      setUploading(false);
     }
   };
 
+  // ─── Delete product ────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
@@ -121,13 +159,13 @@ export default function AdminProducts() {
       setProducts(products.filter(p => p._id !== id));
       toast.success('Product deleted');
     } catch (err) {
-      toast.error('Failed to delete product');
+      toast.error(err.response?.data?.message || 'Failed to delete product');
     }
   };
 
   const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
-  // Loading state
+  // ─── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="admin-page">
@@ -139,7 +177,7 @@ export default function AdminProducts() {
     );
   }
 
-  // Error state
+  // ─── Error state ───────────────────────────────────────────────────────────
   if (fetchError) {
     return (
       <div className="admin-page">
@@ -155,6 +193,7 @@ export default function AdminProducts() {
     );
   }
 
+  // ─── Main render ───────────────────────────────────────────────────────────
   return (
     <div className="admin-page">
       <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -171,16 +210,22 @@ export default function AdminProducts() {
         <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ position: 'relative', width: '300px' }}>
             <Search size={18} style={{ position: 'absolute', left: 12, top: 10, color: 'var(--text-muted)' }} />
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="Search products..." 
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Search products..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={e => setSearch(e.target.value)}
               style={{ paddingLeft: 40 }}
             />
           </div>
-          <button className="btn" style={{ background: 'transparent', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem' }} onClick={fetchProducts}>🔄 Refresh</button>
+          <button
+            className="btn"
+            style={{ background: 'transparent', border: '1px solid var(--border)', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem' }}
+            onClick={fetchProducts}
+          >
+            🔄 Refresh
+          </button>
         </div>
 
         <div className="table-responsive">
@@ -197,12 +242,24 @@ export default function AdminProducts() {
             </thead>
             <tbody>
               {filtered.map(p => {
-                const discount = p.originalPrice > p.price ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100) : 0;
+                const discount = p.originalPrice > p.price
+                  ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
+                  : 0;
                 return (
                   <tr key={p._id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <img src={p.images?.[0]} alt="" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
+                        {p.images?.[0] ? (
+                          <img
+                            src={p.images[0]}
+                            alt={p.name}
+                            style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover', border: '1px solid var(--border)' }}
+                          />
+                        ) : (
+                          <div style={{ width: 40, height: 40, borderRadius: 4, background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Image size={18} color="var(--text-muted)" />
+                          </div>
+                        )}
                         <span className="font-medium text-primary">{p.name}</span>
                       </div>
                     </td>
@@ -236,23 +293,29 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* ─── Add / Edit Modal ────────────────────────────────────────────── */}
       {isModalOpen && (
         <div className="admin-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '600px', padding: '32px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button className="icon-btn" onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: 20, top: 20 }}><X size={24} /></button>
+          <div className="card" style={{ width: '100%', maxWidth: '620px', padding: '32px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button className="icon-btn" onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', right: 20, top: 20 }}>
+              <X size={24} />
+            </button>
             <h2 className="panel-title">{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-            
+
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+              {/* Product Name */}
               <div className="form-group">
-                <label className="form-label">Product Name</label>
-                <input required className="form-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <label className="form-label">Product Name *</label>
+                <input required className="form-input" placeholder="e.g. Royal Banarasi Silk Saree"
+                  value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
-              
+
+              {/* Category + Stock */}
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Category</label>
-                  <select className="form-input" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                  <label className="form-label">Category *</label>
+                  <select className="form-input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                     <option>Sarees</option>
                     <option>Kurtis</option>
                     <option>Earrings</option>
@@ -260,47 +323,146 @@ export default function AdminProducts() {
                   </select>
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Stock Quantity</label>
-                  <input required type="number" className="form-input" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                  <label className="form-label">Stock Quantity *</label>
+                  <input required type="number" min="0" className="form-input" placeholder="e.g. 25"
+                    value={formData.stock} onChange={e => setFormData({ ...formData, stock: e.target.value })} />
                 </div>
               </div>
 
+              {/* Prices */}
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Original Price (₹)</label>
-                  <input required type="number" className="form-input" value={formData.originalPrice} onChange={e => setFormData({...formData, originalPrice: e.target.value})} />
+                  <label className="form-label">Original Price (₹) *</label>
+                  <input required type="number" min="0" className="form-input" placeholder="e.g. 7999"
+                    value={formData.originalPrice} onChange={e => setFormData({ ...formData, originalPrice: e.target.value })} />
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Discounted/Sale Price (₹)</label>
-                  <input required type="number" className="form-input" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+                  <label className="form-label">Sale / Discounted Price (₹) *</label>
+                  <input required type="number" min="0" className="form-input" placeholder="e.g. 4999"
+                    value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
                   {formData.originalPrice && formData.price && Number(formData.originalPrice) > Number(formData.price) && (
                     <p style={{ fontSize: '0.8rem', color: '#4ade80', marginTop: '6px' }}>
-                      Discount applied: {Math.round(((Number(formData.originalPrice) - Number(formData.price)) / Number(formData.originalPrice)) * 100)}% OFF
+                      Discount: {Math.round(((Number(formData.originalPrice) - Number(formData.price)) / Number(formData.originalPrice)) * 100)}% OFF
                     </p>
                   )}
                 </div>
               </div>
 
+              {/* Sizes, Colors, Tags */}
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Sizes <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>
+                  <input className="form-input" placeholder="S, M, L, XL"
+                    value={formData.sizes} onChange={e => setFormData({ ...formData, sizes: e.target.value })} />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label">Colors <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>
+                  <input className="form-input" placeholder="Red, Blue, Green"
+                    value={formData.colors} onChange={e => setFormData({ ...formData, colors: e.target.value })} />
+                </div>
+              </div>
+
               <div className="form-group">
-                <label className="form-label">Product Images</label>
-                <input type="file" multiple accept="image/*" className="form-input" onChange={handleImageChange} style={{ padding: '8px' }} />
+                <label className="form-label">Tags <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>
+                <input className="form-input" placeholder="wedding, festive, traditional"
+                  value={formData.tags} onChange={e => setFormData({ ...formData, tags: e.target.value })} />
+              </div>
+
+              {/* Image Upload — Uses FormData, NOT Base64 */}
+              <div className="form-group">
+                <label className="form-label">
+                  Product Images {!editingId && <span style={{ color: '#ff6b6b' }}>*</span>}
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginLeft: 8 }}>
+                    (max 5 images, 5MB each — uploaded to Cloudinary)
+                  </span>
+                </label>
+
+                {/* Drag-and-drop style upload button */}
+                <label
+                  htmlFor="product-images"
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    border: '2px dashed var(--border)', borderRadius: 12, padding: '24px',
+                    cursor: 'pointer', transition: 'border-color 0.2s',
+                    background: 'var(--bg-secondary)',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                >
+                  <Upload size={28} color="var(--text-muted)" style={{ marginBottom: 8 }} />
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Click to select images</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: 4 }}>JPG, PNG, WebP — up to 5MB each</span>
+                </label>
+                <input
+                  id="product-images"
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleImageChange}
+                />
+
+                {/* Image previews with remove button */}
                 {imagePreviews.length > 0 && (
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' }}>
                     {imagePreviews.map((src, idx) => (
-                      <img key={idx} src={src} alt="Preview" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid var(--border)' }} />
+                      <div key={idx} style={{ position: 'relative' }}>
+                        <img
+                          src={src}
+                          alt={`Preview ${idx + 1}`}
+                          style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(idx)}
+                          style={{
+                            position: 'absolute', top: -6, right: -6,
+                            width: 20, height: 20, borderRadius: '50%',
+                            background: '#ff6b6b', border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', fontSize: '12px', lineHeight: 1,
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
+
+                {/* Info about existing images when editing */}
+                {editingId && imageFiles.length === 0 && imagePreviews.length > 0 && (
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 8 }}>
+                    ℹ️ Existing images shown above. Select new files to replace them.
+                  </p>
+                )}
               </div>
 
+              {/* Description */}
               <div className="form-group">
-                <label className="form-label">Description</label>
-                <textarea required className="form-input" rows="4" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+                <label className="form-label">Description *</label>
+                <textarea required className="form-input" rows="4" placeholder="Describe the product..."
+                  value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
               </div>
 
-              <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: '10px' }}>
-                {editingId ? 'Save Changes' : 'Add Product'}
+              {/* Submit button */}
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg"
+                style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                    Uploading to Cloudinary...
+                  </>
+                ) : (
+                  <>{editingId ? 'Save Changes' : 'Add Product'}</>
+                )}
               </button>
+
             </form>
           </div>
         </div>

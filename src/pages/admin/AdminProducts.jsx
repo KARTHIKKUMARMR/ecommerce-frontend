@@ -23,8 +23,6 @@ export default function AdminProducts() {
   const [imagePreviews, setImagePreviews] = useState([]); // Preview URLs for display
   const fileInputRef = useRef(null);
 
-  useEffect(() => { fetchProducts(); }, []);
-
   // ─── Fetch all products ────────────────────────────────────────────────────
   const fetchProducts = async () => {
     setLoading(true);
@@ -40,6 +38,8 @@ export default function AdminProducts() {
       setLoading(false);
     }
   };
+
+  useEffect(() => { fetchProducts(); }, []);
 
   // ─── Open modal (add or edit) ──────────────────────────────────────────────
   const handleOpenModal = (product = null) => {

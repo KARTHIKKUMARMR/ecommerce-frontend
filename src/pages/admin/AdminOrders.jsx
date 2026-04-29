@@ -16,20 +16,21 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   const fetchOrders = async () => {
     try {
       const { data } = await api.get('/admin/orders');
       setOrders(data);
     } catch (err) {
+      console.error(err);
       toast.error('Failed to load orders');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
@@ -37,6 +38,7 @@ export default function AdminOrders() {
       setOrders(orders.map(o => o._id === id ? { ...o, status: newStatus } : o));
       toast.success(`Order status updated to ${newStatus}`);
     } catch (err) {
+      console.error(err);
       toast.error('Failed to update status');
     }
   };

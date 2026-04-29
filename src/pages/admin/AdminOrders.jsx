@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Eye, Edit2 } from 'lucide-react';
+import { Search, Eye, Edit2, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
@@ -34,12 +34,24 @@ export default function AdminOrders() {
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      await api.put(`/admin/orders/${id}`, { status: newStatus });
-      setOrders(orders.map(o => o._id === id ? { ...o, status: newStatus } : o));
+      await api.put(`/admin/orders/${id}/status`, { status: newStatus });
+      setOrders(orders.map(o => o._id === id ? { ...o, orderStatus: newStatus } : o));
       toast.success(`Order status updated to ${newStatus}`);
     } catch (err) {
       console.error(err);
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleDeleteOrder = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this order?')) return;
+    try {
+      await api.delete(`/admin/orders/${id}`);
+      setOrders(orders.filter(o => o._id !== id));
+      toast.success('Order deleted successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete order');
     }
   };
 
@@ -94,22 +106,32 @@ export default function AdminOrders() {
                   <td>{o.items?.length || 0} items</td>
                   <td className="font-medium text-gold">₹{o.total?.toLocaleString() || 0}</td>
                   <td>
-                    <span className={`status-badge ${(o.status || 'Processing').toLowerCase()}`}>
-                      {o.status || 'Processing'}
+                    <span className={`status-badge ${(o.orderStatus || 'placed').toLowerCase()}`}>
+                      {(o.orderStatus || 'placed').charAt(0).toUpperCase() + (o.orderStatus || 'placed').slice(1)}
                     </span>
                   </td>
-                  <td>
+                  <td style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <select 
                       className="form-input" 
                       style={{ padding: '4px 8px', fontSize: '0.8rem', width: 'auto' }}
-                      value={o.status || 'Processing'}
+                      value={o.orderStatus || 'placed'}
                       onChange={(e) => handleUpdateStatus(o._id, e.target.value)}
                     >
-                      <option value="Processing">Processing</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Returned">Returned</option>
+                      <option value="placed">Placed</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
                     </select>
+                    <button 
+                      onClick={() => handleDeleteOrder(o._id)} 
+                      className="btn-icon text-red" 
+                      title="Delete Order"
+                      style={{ padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </td>
                 </tr>
               ))}

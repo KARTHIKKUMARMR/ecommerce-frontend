@@ -102,19 +102,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Newsletter */}
-        <div className="footer-newsletter">
-          <div className="newsletter-inner">
-            <div className="newsletter-text">
-              <h4>Join Our Royal Circle</h4>
-              <p>Get exclusive offers, new arrivals & festive collection updates</p>
-            </div>
-            <form className="newsletter-form" onSubmit={e => e.preventDefault()}>
-              <input type="email" placeholder="Enter your email address" className="form-input newsletter-input" />
-              <button type="submit" className="btn btn-primary">Subscribe</button>
-            </form>
-          </div>
-        </div>
+
       </div>
 
       <div className="footer-ornament-bottom" />

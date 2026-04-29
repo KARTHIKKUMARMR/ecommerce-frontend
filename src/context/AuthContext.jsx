@@ -42,9 +42,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const resetPassword = async (email, newPassword) => {
+  const forgotPassword = async (email) => {
     try {
-      await api.post('/auth/reset-password', { email, newPassword });
+      const { data } = await api.post('/auth/forgot-password', { email });
+      return data;
+    } catch (err) {
+      throw new Error(err.response?.data?.message || 'Failed to send reset email');
+    }
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    try {
+      const { data } = await api.post(`/auth/reset-password/${token}`, { newPassword });
+      return data;
     } catch (err) {
       throw new Error(err.response?.data?.message || 'Failed to reset password');
     }
@@ -69,7 +79,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, resetPassword, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, register, forgotPassword, resetPassword, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

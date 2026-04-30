@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -8,31 +8,41 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
+
+  // AGGRESSIVE: If already logged in, don't stay here, go HOME
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/admin');
+      else navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const user = await login(email, password);
+      const loggedInUser = await login(email, password);
+      console.log('Login successful, redirecting customer to HOME...');
       toast.success('Welcome back!');
       
-      // Admin goes to dashboard
-      if (user.role === 'admin') {
+      // 1. Admin always goes to dashboard
+      if (loggedInUser.role === 'admin') {
         navigate('/admin');
       } 
-      // Customers who were trying to checkout go back to checkout
+      // 2. ONLY if they were in the middle of a purchase, go back to checkout
       else if (from === '/checkout') {
         navigate('/checkout', { replace: true });
       }
-      // Everyone else goes to Home Page
+      // 3. EVERYONE ELSE IS FORCED TO HOME
       else {
         navigate('/', { replace: true });
       }
     } catch (err) {
-      toast.error(err.message || 'Server connection failed. Is the backend running?');
+      toast.error(err.message || 'Login failed');
     } finally {
       setLoading(false);
     }

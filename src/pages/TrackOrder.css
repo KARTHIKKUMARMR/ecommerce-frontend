@@ -1,0 +1,314 @@
+.track-order-page {
+  padding: 80px 0;
+  min-height: 80vh;
+}
+
+.track-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 60px;
+}
+
+.track-title {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  color: var(--gold);
+}
+
+.track-subtitle {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  margin-bottom: 32px;
+}
+
+.track-search-form {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-surface);
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+
+.track-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--gold-dark);
+}
+
+.track-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 12px 12px 12px 48px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+}
+
+.track-btn {
+  padding: 0 32px;
+}
+
+/* Stepper */
+.status-stepper {
+  display: flex;
+  justify-content: space-between;
+  padding: 40px 20px;
+  position: relative;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.step-icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.step-check {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #28a745;
+  border-radius: 50%;
+  display: flex;
+  padding: 2px;
+}
+
+.step-label {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.step-line {
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  z-index: -1;
+}
+
+.step-item.completed .step-icon-wrap {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201, 168, 76, 0.1);
+}
+
+.step-item.completed .step-line {
+  background: var(--gold);
+}
+
+.step-item.current .step-icon-wrap {
+  background: var(--gold);
+  color: #1a0a0a;
+  border-color: var(--gold);
+  box-shadow: 0 0 15px rgba(201, 168, 76, 0.4);
+}
+
+.step-item.current .step-label {
+  color: var(--gold);
+}
+
+/* Track Grid */
+.track-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.track-card {
+  padding: 32px;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  margin-bottom: 24px;
+  color: var(--gold-pale);
+  display: flex;
+  align-items: center;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-weight: 600;
+}
+
+.track-items {
+  margin-top: 24px;
+}
+
+.items-title {
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
+
+.track-item-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.item-thumb {
+  width: 50px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-name {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.item-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.track-total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.total-val {
+  color: var(--gold);
+  font-size: 1.2rem;
+}
+
+/* Shipping Card */
+.address-box {
+  background: var(--bg-secondary);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 32px;
+}
+
+.ship-name {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ship-addr {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 2px 0;
+}
+
+.ship-phone {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--gold-dark);
+}
+
+.help-box {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.help-title {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.help-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.help-link {
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.help-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .track-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .status-stepper {
+    flex-direction: column;
+    gap: 32px;
+    padding: 20px 0;
+  }
+  
+  .step-line {
+    display: none;
+  }
+  
+  .step-item {
+    flex-direction: row;
+    gap: 16px;
+    align-items: center;
+  }
+  
+  .step-label {
+    margin: 0;
+  }
+}

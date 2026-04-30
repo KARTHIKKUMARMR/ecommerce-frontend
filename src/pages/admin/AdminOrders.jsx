@@ -25,10 +25,19 @@ export default function AdminOrders() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const handleUpdateStatus = async (id, newStatus) => {
+  const handleUpdateStatus = async (id, newStatus, trackingId = '', courierName = '') => {
     try {
-      await api.put(`/admin/orders/${id}/status`, { status: newStatus });
-      setOrders(orders.map(o => o._id === id ? { ...o, orderStatus: newStatus } : o));
+      await api.put(`/admin/orders/${id}/status`, { 
+        status: newStatus,
+        trackingId,
+        courierName
+      });
+      setOrders(orders.map(o => o._id === id ? { 
+        ...o, 
+        orderStatus: newStatus,
+        trackingId,
+        courierName
+      } : o));
       toast.success(`Order status updated to ${newStatus}`);
     } catch (err) {
       console.error(err);
@@ -50,7 +59,9 @@ export default function AdminOrders() {
 
   const filtered = orders.filter(o => 
     o._id.toLowerCase().includes(search.toLowerCase()) || 
-    (o.user?.name && o.user.name.toLowerCase().includes(search.toLowerCase()))
+    (o.user?.name && o.user.name.toLowerCase().includes(search.toLowerCase())) ||
+    (o.guestInfo?.name && o.guestInfo.name.toLowerCase().includes(search.toLowerCase())) ||
+    (o.trackingId && o.trackingId.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -67,7 +78,7 @@ export default function AdminOrders() {
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Search by Order ID or Customer..." 
+              placeholder="Search by Order ID, Customer, or Tracking ID..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{ paddingLeft: 40 }}
@@ -81,9 +92,8 @@ export default function AdminOrders() {
               <tr>
                 <th>Order ID</th>
                 <th>Customer</th>
-                <th>Date</th>
-                <th>Items</th>
-                <th>Total Amount</th>
+                <th>Details</th>
+                <th>Tracking Info</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -91,16 +101,52 @@ export default function AdminOrders() {
             <tbody>
               {filtered.map(o => (
                 <tr key={o._id}>
-                  <td className="font-medium">{o._id.slice(-8).toUpperCase()}</td>
-                  <td>{o.user?.name || 'Guest'}</td>
-                  <td className="text-muted">
-                    {new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  <td className="font-medium">#{o._id.slice(-8).toUpperCase()}</td>
+                  <td>
+                    <div>
+                      <p style={{ margin: 0 }}>{o.user?.name || o.guestInfo?.name || 'Guest'}</p>
+                      <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {o.user?.email || o.guestInfo?.email || 'No email'}
+                      </p>
+                    </div>
                   </td>
-                  <td>{o.items?.length || 0} items</td>
-                  <td className="font-medium text-gold">₹{o.total?.toLocaleString() || 0}</td>
+                  <td>
+                    <div style={{ fontSize: '0.85rem' }}>
+                      <p style={{ margin: 0 }}>{o.items?.length || 0} items</p>
+                      <p style={{ margin: 0, fontWeight: '600', color: 'var(--gold)' }}>₹{o.total?.toLocaleString()}</p>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Tracking ID"
+                        className="form-input"
+                        defaultValue={o.trackingId || ''}
+                        onBlur={(e) => {
+                          if (e.target.value !== (o.trackingId || '')) {
+                            handleUpdateStatus(o._id, o.orderStatus, e.target.value, o.courierName);
+                          }
+                        }}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Courier Name"
+                        className="form-input"
+                        defaultValue={o.courierName || ''}
+                        onBlur={(e) => {
+                          if (e.target.value !== (o.courierName || '')) {
+                            handleUpdateStatus(o._id, o.orderStatus, o.trackingId, e.target.value);
+                          }
+                        }}
+                        style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+                      />
+                    </div>
+                  </td>
                   <td>
                     <span className={`status-badge ${(o.orderStatus || 'placed').toLowerCase()}`}>
-                      {(o.orderStatus || 'placed').charAt(0).toUpperCase() + (o.orderStatus || 'placed').slice(1)}
+                      {(o.orderStatus || 'placed').charAt(0).toUpperCase() + (o.orderStatus || 'placed').slice(1).replace('_', ' ')}
                     </span>
                   </td>
                   <td style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -108,12 +154,13 @@ export default function AdminOrders() {
                       className="form-input" 
                       style={{ padding: '4px 8px', fontSize: '0.8rem', width: 'auto' }}
                       value={o.orderStatus || 'placed'}
-                      onChange={(e) => handleUpdateStatus(o._id, e.target.value)}
+                      onChange={(e) => handleUpdateStatus(o._id, e.target.value, o.trackingId, o.courierName)}
                     >
                       <option value="placed">Placed</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
                       <option value="shipped">Shipped</option>
+                      <option value="out_for_delivery">Out for Delivery</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
@@ -129,7 +176,7 @@ export default function AdminOrders() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan="7" style={{ textAlign: 'center', padding: '40px' }}>No orders found.</td></tr>
+                <tr><td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>No orders found.</td></tr>
               )}
             </tbody>
           </table>

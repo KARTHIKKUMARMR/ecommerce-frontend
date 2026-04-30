@@ -24,6 +24,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
+import TrackOrder from './pages/TrackOrder';
 
 import './index.css';
 
@@ -60,6 +61,7 @@ function App() {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/wishlist" element={<WishlistPage />} />
                     <Route path="/order-confirm/:id" element={<OrderConfirmPage />} />
+                    <Route path="/track" element={<TrackOrder />} />
                   </Routes>
                 </main>
                 <Footer />

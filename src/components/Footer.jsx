@@ -57,7 +57,7 @@ export default function Footer() {
             <ul className="footer-links">
               {[
                 { to: '/profile', label: 'My Account' },
-                { to: '/profile', label: 'Order Tracking' },
+                { to: '/track', label: 'Order Tracking' },
                 { to: '#', label: 'Size Guide' },
                 { to: '#', label: 'Return Policy' },
                 { to: '#', label: 'Shipping Info' },

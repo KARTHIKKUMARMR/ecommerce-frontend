@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Edit2, Trash2, Search, X, Upload, Image } from 'lucide-react';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -24,7 +24,7 @@ export default function AdminProducts() {
   const fileInputRef = useRef(null);
 
   // ─── Fetch all products ────────────────────────────────────────────────────
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     setFetchError(false);
     try {
@@ -37,9 +37,9 @@ export default function AdminProducts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   // ─── Open modal (add or edit) ──────────────────────────────────────────────
   const handleOpenModal = (product = null) => {

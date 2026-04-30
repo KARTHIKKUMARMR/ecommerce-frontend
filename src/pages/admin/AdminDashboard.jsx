@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TrendingUp, Package, ShoppingBag, Users, IndianRupee, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
 import './Admin.css';
@@ -9,7 +9,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchDashboardData = async (selectedFilter) => {
+  const fetchDashboardData = useCallback(async (selectedFilter) => {
     setLoading(true);
     setError(null);
     try {
@@ -21,11 +21,11 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDashboardData(filter);
-  }, [filter]);
+  }, [filter, fetchDashboardData]);
 
   if (loading && !data) {
     return (

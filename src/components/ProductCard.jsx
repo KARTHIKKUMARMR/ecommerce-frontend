@@ -44,7 +44,12 @@ export default function ProductCard({ product }) {
           <button
             type="button"
             className="cart-quick-btn"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(product, 1, product.sizes?.[0] || '', product.colors?.[0] || ''); }}
+            onClick={(e) => { 
+              e.preventDefault(); 
+              e.stopPropagation(); 
+              const firstAvail = product.sizes?.find(s => s.stock > 0);
+              addToCart(product, 1, firstAvail ? firstAvail.size : (product.sizes?.[0]?.size || ''), product.colors?.[0] || ''); 
+            }}
             disabled={product.stock === 0}
             aria-label="Add to cart"
           >
@@ -78,7 +83,7 @@ export default function ProductCard({ product }) {
         {product.sizes?.length > 0 && (
           <div className="product-sizes">
             {product.sizes.slice(0, 4).map(s => (
-              <span key={s} className="size-chip">{s}</span>
+              <span key={s.size} className={`size-chip ${s.stock === 0 ? 'oos' : ''}`}>{s.size}</span>
             ))}
             {product.sizes.length > 4 && <span className="size-chip">+{product.sizes.length - 4}</span>}
           </div>

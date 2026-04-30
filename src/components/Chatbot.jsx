@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Chatbot.css';
@@ -31,27 +31,27 @@ export default function Chatbot() {
 
   const scrollToBottom = () => endRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-  useEffect(() => {
-    if (open && messages.length === 0) startChat();
-  }, [open]);
-
-  useEffect(() => { scrollToBottom(); }, [messages]);
-
-  const addBotMsg = (text, delay = 600) => {
+  const addBotMsg = useCallback((text, delay = 600) => {
     setTyping(true);
     setTimeout(() => {
       setTyping(false);
       setMessages(prev => [...prev, { from: 'bot', text }]);
     }, delay);
-  };
+  }, []);
 
-  const startChat = () => {
+  const startChat = useCallback(() => {
     setMessages([]);
     setStep(0);
     setAnswers({});
     const q = FLOW[0];
     addBotMsg(q.bot, 400);
-  };
+  }, [addBotMsg]);
+
+  useEffect(() => {
+    if (open && messages.length === 0) startChat();
+  }, [open, messages.length, startChat]);
+
+  useEffect(() => { scrollToBottom(); }, [messages]);
 
   const handleUserReply = (text) => {
     setMessages(prev => [...prev, { from: 'user', text }]);

@@ -1,22 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Search, Eye, Edit2, Trash2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Trash2 } from 'lucide-react';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
 
-// Mock data in case DB is offline
-const MOCK_ORDERS = [
-  { _id: 'ORD-7829', user: { name: 'Priya Sharma' }, createdAt: new Date().toISOString(), total: 4999, status: 'Processing', items: [{ name: 'Royal Banarasi Silk Saree', quantity: 1, price: 4999 }] },
-  { _id: 'ORD-7828', user: { name: 'Aisha Khan' }, createdAt: new Date(Date.now() - 86400000).toISOString(), total: 1899, status: 'Shipped', items: [{ name: 'Chanderi Printed Saree', quantity: 1, price: 1899 }] },
-  { _id: 'ORD-7827', user: { name: 'Meera Patel' }, createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), total: 6499, status: 'Delivered', items: [{ name: 'Kanjivaram Silk Saree', quantity: 1, price: 6499 }] },
-  { _id: 'ORD-7826', user: { name: 'Neha Gupta' }, createdAt: new Date(Date.now() - 86400000 * 5).toISOString(), total: 1299, status: 'Returned', items: [{ name: 'Anarkali Floral Kurti', quantity: 1, price: 1299 }] },
-];
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const { data } = await api.get('/admin/orders');
       setOrders(data);
@@ -26,11 +19,11 @@ export default function AdminOrders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {

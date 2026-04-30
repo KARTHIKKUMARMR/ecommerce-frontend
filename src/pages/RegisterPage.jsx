@@ -12,7 +12,6 @@ export default function RegisterPage() {
   const [cooldown, setCooldown] = useState(0);       // resend countdown in seconds
   const [devOtp, setDevOtp]     = useState('');      // OTP shown in dev mode
   const [previewUrl, setPreviewUrl] = useState('');  // Ethereal preview URL (dev)
-  const navigate  = useNavigate();
   const timerRef  = useRef(null);
 
   // ── 60-second resend cooldown timer ────────────────────────────────────

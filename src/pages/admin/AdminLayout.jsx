@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingBag, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './Admin.css';
 

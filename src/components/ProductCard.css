@@ -148,3 +148,8 @@
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+.size-chip.oos {
+  text-decoration: line-through;
+  opacity: 0.5;
+  background: var(--bg-surface);
+}

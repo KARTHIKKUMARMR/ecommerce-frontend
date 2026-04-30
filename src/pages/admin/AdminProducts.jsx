@@ -53,7 +53,8 @@ export default function AdminProducts() {
         originalPrice: product.originalPrice || '',
         stock:         product.stock,
         description:   product.description || '',
-        sizes:         (product.sizes || []).join(', '),
+        // Internal state for sizes will be an array of {size, stock}
+        sizes:         product.sizes || [],
         colors:        (product.colors || []).join(', '),
         tags:          (product.tags || []).join(', '),
         allowedPaymentMethods: product.allowedPaymentMethods?.length > 0
@@ -63,7 +64,7 @@ export default function AdminProducts() {
       setImagePreviews(product.images || []);
     } else {
       setEditingId(null);
-      setFormData({ name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '', sizes: '', colors: '', tags: '', allowedPaymentMethods: ['COD', 'Online'] });
+      setFormData({ name: '', category: 'Sarees', price: '', originalPrice: '', stock: '', description: '', sizes: [], colors: '', tags: '', allowedPaymentMethods: ['COD', 'Online'] });
       setImagePreviews([]);
     }
     setIsModalOpen(true);
@@ -122,7 +123,11 @@ export default function AdminProducts() {
       fd.append('originalPrice', formData.originalPrice || '0');
       fd.append('stock',         formData.stock);
       fd.append('description',   formData.description.trim());
-      if (formData.sizes)  fd.append('sizes',  formData.sizes);
+      
+      // Sizes as JSON string
+      if (formData.sizes && formData.sizes.length > 0) {
+        fd.append('sizes', JSON.stringify(formData.sizes));
+      }
       if (formData.colors) fd.append('colors', formData.colors);
       if (formData.tags)   fd.append('tags',   formData.tags);
 
@@ -359,19 +364,63 @@ export default function AdminProducts() {
                 </div>
               </div>
 
-              {/* Sizes, Colors, Tags */}
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Sizes <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>
-                  <input className="form-input" placeholder="S, M, L, XL"
-                    value={formData.sizes} onChange={e => setFormData({ ...formData, sizes: e.target.value })} />
-                </div>
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label">Colors <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>
-                  <input className="form-input" placeholder="Red, Blue, Green"
-                    value={formData.colors} onChange={e => setFormData({ ...formData, colors: e.target.value })} />
-                </div>
+              {/* Sizes Management */}
+              <div className="form-group" style={{ background: 'var(--bg-secondary)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>📏 Product Sizes & Stock</span>
+                  <button type="button" className="btn btn-sm btn-outline" 
+                    onClick={() => setFormData({ ...formData, sizes: [...formData.sizes, { size: '', stock: 0 }] })}>
+                    <Plus size={14} /> Add Size
+                  </button>
+                </label>
+                
+                {formData.sizes.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '10px 0' }}>No sizes added yet. Click "Add Size" to begin.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                    {formData.sizes.map((s, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <input
+                          className="form-input"
+                          style={{ flex: 2 }}
+                          placeholder="Size (e.g. S, M, XL)"
+                          value={s.size}
+                          onChange={e => {
+                            const newSizes = [...formData.sizes];
+                            newSizes[idx].size = e.target.value;
+                            setFormData({ ...formData, sizes: newSizes });
+                          }}
+                        />
+                        <input
+                          type="number"
+                          className="form-input"
+                          style={{ flex: 1 }}
+                          placeholder="Stock"
+                          value={s.stock}
+                          onChange={e => {
+                            const newSizes = [...formData.sizes];
+                            newSizes[idx].stock = e.target.value;
+                            setFormData({ ...formData, sizes: newSizes });
+                          }}
+                        />
+                        <button type="button" className="icon-btn" style={{ color: '#ff6b6b' }}
+                          onClick={() => setFormData({ ...formData, sizes: formData.sizes.filter((_, i) => i !== idx) })}>
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                      💡 Total Stock: <strong>{formData.sizes.reduce((acc, s) => acc + Number(s.stock || 0), 0)}</strong> (will update automatically)
+                    </p>
+                  </div>
+                )}
               </div>
+ 
+               <div className="form-group">
+                 <label className="form-label">Colors <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>
+                 <input className="form-input" placeholder="Red, Blue, Green"
+                   value={formData.colors} onChange={e => setFormData({ ...formData, colors: e.target.value })} />
+               </div>
 
               <div className="form-group">
                 <label className="form-label">Tags <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(comma separated)</span></label>

@@ -27,7 +27,9 @@ export default function ProductDetailPage() {
       try {
         const { data } = await api.get(`/products/${id}`);
         setProduct(data);
-        setSelectedSize(data.sizes?.[0] || '');
+        // Find first available size
+        const firstAvail = data.sizes?.find(s => s.stock > 0);
+        setSelectedSize(firstAvail ? firstAvail.size : (data.sizes?.[0]?.size || ''));
         setSelectedColor(data.colors?.[0] || '');
       } catch { 
         toast.error('Product not found'); 
@@ -47,7 +49,18 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const handleAddToCart = () => {
-    if (!selectedSize && product.sizes?.length > 0) { toast.error('Please select a size'); return; }
+    if (!selectedSize && product.sizes?.length > 0) {
+      toast.error('Please select a size');
+      return;
+    }
+    
+    // Validate stock for selected size
+    const sizeData = product.sizes?.find(s => s.size === selectedSize);
+    if (sizeData && sizeData.stock < qty) {
+      toast.error(`Only ${sizeData.stock} items left in size ${selectedSize}`);
+      return;
+    }
+
     addToCart(product, qty, selectedSize, selectedColor);
   };
 
@@ -147,12 +160,19 @@ export default function ProductDetailPage() {
               <div className="detail-selector">
                 <p className="selector-label">Size: <strong>{selectedSize}</strong></p>
                 <div className="selector-options">
-                  {product.sizes.map(s => (
-                    <button key={s}
-                      className={`selector-btn ${selectedSize === s ? 'active' : ''}`}
-                      onClick={() => setSelectedSize(s)}
-                    >{s}</button>
-                  ))}
+                  {product.sizes.map(s => {
+                    const isOOS = s.stock <= 0;
+                    return (
+                      <button key={s.size}
+                        className={`selector-btn ${selectedSize === s.size ? 'active' : ''} ${isOOS ? 'out-of-stock' : ''}`}
+                        onClick={() => !isOOS && setSelectedSize(s.size)}
+                        disabled={isOOS}
+                      >
+                        {s.size}
+                        {isOOS && <span className="oos-label">Out of Stock</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -192,12 +212,23 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="stock-info" style={{ marginTop: '16px', fontWeight: '500', fontSize: '1.05rem' }}>
-              {product.stock > 0
-                ? product.stock <= 5
-                  ? <span style={{ color: '#d9534f' }}>⚠️ Hurry! Only {product.stock} left in stock!</span>
-                  : <><Check size={16} className="text-gold" style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> <span style={{ color: 'var(--maroon-light)' }}>{product.stock} in stock — Order now!</span></>
-                : <span style={{ color: '#d9534f' }}>❌ Currently out of stock</span>
-              }
+              {(() => {
+                if (product.sizes?.length > 0) {
+                  const sizeData = product.sizes.find(s => s.size === selectedSize);
+                  if (!sizeData) return <span style={{ color: 'var(--text-muted)' }}>Select a size to see availability</span>;
+                  if (sizeData.stock <= 0) return <span style={{ color: '#d9534f' }}>❌ Size {selectedSize} is currently out of stock</span>;
+                  if (sizeData.stock <= 5) return <span style={{ color: '#d9534f' }}>⚠️ Hurry! Only {sizeData.stock} left in {selectedSize}!</span>;
+                  return <><Check size={16} className="text-gold" style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> <span style={{ color: 'var(--maroon-light)' }}>Size {selectedSize} is in stock — Order now!</span></>;
+                }
+                
+                // Fallback for products without sizes
+                if (product.stock > 0) {
+                  return product.stock <= 5
+                    ? <span style={{ color: '#d9534f' }}>⚠️ Hurry! Only {product.stock} left in stock!</span>
+                    : <><Check size={16} className="text-gold" style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> <span style={{ color: 'var(--maroon-light)' }}>{product.stock} in stock — Order now!</span></>;
+                }
+                return <span style={{ color: '#d9534f' }}>❌ Currently out of stock</span>;
+              })()}
             </div>
 
             {/* Tags */}

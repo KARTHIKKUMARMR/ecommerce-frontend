@@ -93,9 +93,15 @@ export default function ProductCard({ product }) {
 
         {product.sizes?.length > 0 && (
           <div className="product-sizes">
-            {product.sizes.slice(0, 4).map(s => (
-              <span key={s.size} className={`size-chip ${s.stock === 0 ? 'oos' : ''}`}>{s.size}</span>
-            ))}
+            {product.sizes.slice(0, 4).map(s => {
+              const sizeLabel = typeof s === 'string' ? s : s.size;
+              const isOOS = typeof s === 'object' && s.stock === 0;
+              return (
+                <span key={sizeLabel} className={`size-chip ${isOOS ? 'oos' : ''}`}>
+                  {sizeLabel}
+                </span>
+              );
+            })}
             {product.sizes.length > 4 && <span className="size-chip">+{product.sizes.length - 4}</span>}
           </div>
         )}

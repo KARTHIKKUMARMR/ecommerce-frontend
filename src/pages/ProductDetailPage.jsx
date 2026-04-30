@@ -54,8 +54,8 @@ export default function ProductDetailPage() {
     }
     
     // Validate stock for selected size
-    const sizeData = product.sizes?.find(s => s.size === selectedSize);
-    if (sizeData && sizeData.stock < qty) {
+    const sizeData = product.sizes?.find(s => (typeof s === 'string' ? s : s.size) === selectedSize);
+    if (sizeData && typeof sizeData === 'object' && sizeData.stock < qty) {
       toast.error(`Only ${sizeData.stock} items left in size ${selectedSize}`);
       return;
     }
@@ -160,14 +160,15 @@ export default function ProductDetailPage() {
                 <p className="selector-label">Size: <strong>{selectedSize}</strong></p>
                 <div className="selector-options">
                   {product.sizes.map(s => {
-                    const isOOS = s.stock <= 0;
+                    const sizeLabel = typeof s === 'string' ? s : s.size;
+                    const isOOS = typeof s === 'object' && s.stock <= 0;
                     return (
-                      <button key={s.size}
-                        className={`selector-btn ${selectedSize === s.size ? 'active' : ''} ${isOOS ? 'out-of-stock' : ''}`}
-                        onClick={() => !isOOS && setSelectedSize(s.size)}
+                      <button key={sizeLabel}
+                        className={`selector-btn ${selectedSize === sizeLabel ? 'active' : ''} ${isOOS ? 'out-of-stock' : ''}`}
+                        onClick={() => !isOOS && setSelectedSize(sizeLabel)}
                         disabled={isOOS}
                       >
-                        {s.size}
+                        {sizeLabel}
                         {isOOS && <span className="oos-label">Out of Stock</span>}
                       </button>
                     );
@@ -213,8 +214,14 @@ export default function ProductDetailPage() {
             <div className="stock-info" style={{ marginTop: '16px', fontWeight: '500', fontSize: '1.05rem' }}>
               {(() => {
                 if (product.sizes?.length > 0) {
-                  const sizeData = product.sizes.find(s => s.size === selectedSize);
+                  const sizeData = product.sizes.find(s => (typeof s === 'string' ? s : s.size) === selectedSize);
                   if (!sizeData) return <span style={{ color: 'var(--text-muted)' }}>Select a size to see availability</span>;
+                  
+                  // If it's the old string format, we just say "In Stock" if total stock > 0
+                  if (typeof sizeData === 'string') {
+                    return product.stock > 0 ? <><Check size={16} className="text-gold" style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> <span style={{ color: 'var(--maroon-light)' }}>In stock — Order now!</span></> : <span style={{ color: '#d9534f' }}>❌ Out of stock</span>;
+                  }
+
                   if (sizeData.stock <= 0) return <span style={{ color: '#d9534f' }}>❌ Size {selectedSize} is currently out of stock</span>;
                   if (sizeData.stock <= 5) return <span style={{ color: '#d9534f' }}>⚠️ Hurry! Only {sizeData.stock} left in {selectedSize}!</span>;
                   return <><Check size={16} className="text-gold" style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> <span style={{ color: 'var(--maroon-light)' }}>Size {selectedSize} is in stock — Order now!</span></>;

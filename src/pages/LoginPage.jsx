@@ -18,10 +18,18 @@ export default function LoginPage() {
     try {
       const user = await login(email, password);
       toast.success('Welcome back!');
-      if (user.role === 'admin' && from === "/") {
+      
+      // Admin goes to dashboard
+      if (user.role === 'admin') {
         navigate('/admin');
-      } else {
-        navigate(from, { replace: true });
+      } 
+      // Customers who were trying to checkout go back to checkout
+      else if (from === '/checkout') {
+        navigate('/checkout', { replace: true });
+      }
+      // Everyone else goes to Home Page
+      else {
+        navigate('/', { replace: true });
       }
     } catch (err) {
       toast.error(err.message || 'Server connection failed. Is the backend running?');

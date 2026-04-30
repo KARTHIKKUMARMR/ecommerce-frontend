@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Star, ChevronRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './ProductCard.css';
 
@@ -41,21 +41,32 @@ export default function ProductCard({ product }) {
           >
             <Heart size={18} fill={inWish ? 'currentColor' : 'none'} />
           </button>
-          <button
-            type="button"
-            className="cart-quick-btn"
-            onClick={(e) => { 
-              e.preventDefault(); 
-              e.stopPropagation(); 
-              const firstAvail = product.sizes?.find(s => s.stock > 0);
-              addToCart(product, 1, firstAvail ? firstAvail.size : (product.sizes?.[0]?.size || ''), product.colors?.[0] || ''); 
-            }}
-            disabled={product.stock === 0}
-            aria-label="Add to cart"
-          >
-            <ShoppingCart size={16} />
-            <span>Quick Add</span>
-          </button>
+          {product.sizes?.length > 1 ? (
+            <Link
+              to={`/products/${product._id}`}
+              className="cart-quick-btn"
+              style={{ textDecoration: 'none' }}
+            >
+              <ChevronRight size={16} />
+              <span>Select Size</span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="cart-quick-btn"
+              onClick={(e) => { 
+                e.preventDefault(); 
+                e.stopPropagation(); 
+                const size = product.sizes?.[0]?.size || '';
+                addToCart(product, 1, size, product.colors?.[0] || ''); 
+              }}
+              disabled={product.stock === 0}
+              aria-label="Add to cart"
+            >
+              <ShoppingCart size={16} />
+              <span>{product.stock === 0 ? 'Sold Out' : 'Quick Add'}</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -28,8 +28,7 @@ export default function ProductDetailPage() {
         const { data } = await api.get(`/products/${id}`);
         setProduct(data);
         // Find first available size
-        const firstAvail = data.sizes?.find(s => s.stock > 0);
-        setSelectedSize(firstAvail ? firstAvail.size : (data.sizes?.[0]?.size || ''));
+        setSelectedSize('');
         setSelectedColor(data.colors?.[0] || '');
       } catch { 
         toast.error('Product not found'); 

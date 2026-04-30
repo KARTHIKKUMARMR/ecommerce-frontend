@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import './AuthPages.css'; // Shared CSS for auth pages
@@ -9,7 +9,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,10 +18,10 @@ export default function LoginPage() {
     try {
       const user = await login(email, password);
       toast.success('Welcome back!');
-      if (user.role === 'admin') {
+      if (user.role === 'admin' && from === "/") {
         navigate('/admin');
       } else {
-        navigate('/profile');
+        navigate(from, { replace: true });
       }
     } catch (err) {
       toast.error(err.message || 'Server connection failed. Is the backend running?');

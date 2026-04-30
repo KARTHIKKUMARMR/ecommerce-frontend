@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Package, User, LogOut, ChevronRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './AuthPages.css';
 
@@ -19,9 +19,13 @@ export default function ProfilePage() {
     password: ''
   });
 
+  const location = useLocation();
+  
   useEffect(() => {
-    if (!user) navigate('/login');
-  }, [user, navigate]);
+    if (!user) {
+      navigate('/login', { state: { from: location }, replace: true });
+    }
+  }, [user, navigate, location]);
 
   useEffect(() => {
     // Fetch mock orders for this user

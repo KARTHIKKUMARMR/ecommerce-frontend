@@ -90,13 +90,17 @@ export default function Header() {
                         <p className="user-email">{user?.email || ''}</p>
                       </div>
                       <Link to="/profile" className="dropdown-item" onClick={() => setUserMenu(false)}>
-                        <User size={14} /> My Profile
+                        <User size={14} /> Profile Settings
+                      </Link>
+                      <Link to="/profile" className="dropdown-item" onClick={() => setUserMenu(false)}>
+                        <Settings size={14} /> Change Password
                       </Link>
                       {user.role === 'admin' && (
                         <Link to="/admin" className="dropdown-item" onClick={() => setUserMenu(false)}>
-                          <Settings size={14} /> Admin Panel
+                          <Package size={14} /> Admin Panel
                         </Link>
                       )}
+                      <div className="dropdown-divider" />
                       <button className="dropdown-item danger" onClick={() => { logout(); setUserMenu(false); navigate('/'); }}>
                         <LogOut size={14} /> Logout
                       </button>

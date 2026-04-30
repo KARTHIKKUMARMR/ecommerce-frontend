@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Check, ChevronRight, User, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +21,7 @@ export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [step, setStep]           = useState(0);
   const [placing, setPlacing]     = useState(false);
@@ -157,7 +158,7 @@ export default function CheckoutPage() {
                 Checking out as <strong style={{ color: 'var(--gold)' }}>Guest</strong>
               </p>
               <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                <Link to="/login" style={{ color: 'var(--gold)' }}>Sign in</Link> to save your order history
+                <Link to="/login" state={{ from: location }} style={{ color: 'var(--gold)' }}>Sign in</Link> to save your order history
               </p>
             </div>
           </div>

@@ -19,7 +19,7 @@ export default function Footer() {
           {/* Brand column */}
           <div className="footer-brand">
             <div className="footer-logo">
-              <img src="/logo.png" alt="HASHTHAKALA Logo" className="footer-logo-image" />
+              <img src="/logo.png" alt="Handkala Logo" className="footer-logo-image" />
             </div>
             <p className="footer-desc">
               Srikalahasthikala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Srikalahasthikala is vowed to provide eco-friendly swadeshi products

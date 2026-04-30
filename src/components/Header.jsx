@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, User, Search, Menu, X, LogOut, Settings } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 import './Header.css';
 
 export default function Header() {
@@ -15,9 +16,20 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
+  const [marketing, setMarketing] = useState(null);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll);
+    const fetchSettings = async () => {
+      try {
+        const { data } = await api.get('/marketing/settings');
+        setMarketing(data);
+      } catch (err) {
+        console.error('Settings fetch failed', err);
+      }
+    };
+    fetchSettings();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -41,9 +53,11 @@ export default function Header() {
   return (
     <>
       {/* Top announcement bar */}
-      <div className="header-announcement">
-        <p>✨ Free shipping on orders above ₹999 | Use code <strong>HERITAGE10</strong> for 10% off ✨</p>
-      </div>
+      {marketing?.banner?.enabled && (
+        <div className="header-announcement">
+          <p>{marketing.banner.text}</p>
+        </div>
+      )}
 
       <header className={`header ${scrolled ? 'scrolled' : ''}`}>
         {/* Decorative top border */}
@@ -53,7 +67,7 @@ export default function Header() {
           <div className="header-inner">
             {/* Logo */}
             <Link to="/" className="logo">
-              <img src="/logo.png" alt="HASHTHAKALA Logo" className="logo-image" />
+              <img src="/logo.png" alt="Handkala Logo" className="logo-image" />
             </Link>
 
             {/* Desktop Nav */}
@@ -127,7 +141,7 @@ export default function Header() {
         <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)}>
           <div className="mobile-menu" onClick={e => e.stopPropagation()}>
             <div className="mobile-menu-header">
-              <span className="logo-brand">HASHTHAKALA</span>
+              <span className="logo-brand">Handkala</span>
               <button onClick={() => setMenuOpen(false)}><X size={24} /></button>
             </div>
             <nav className="mobile-nav">

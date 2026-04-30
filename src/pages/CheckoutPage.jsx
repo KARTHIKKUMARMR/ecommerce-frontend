@@ -31,7 +31,19 @@ export default function CheckoutPage() {
   // blockedMethods: set of 'COD' or 'Online' that are not allowed by any cart item
   const [blockedMethods, setBlockedMethods] = useState(new Set());
 
-  const shipping = cartTotal > 999 ? 0 : 99;
+  const [shippingConfig, setShippingConfig] = useState({ minOrder: 999, fee: 99, enabled: true });
+
+  useEffect(() => {
+    const fetchShipping = async () => {
+      try {
+        const { data } = await api.get('/marketing/settings');
+        if (data.shipping) setShippingConfig(data.shipping);
+      } catch (err) {}
+    };
+    fetchShipping();
+  }, []);
+
+  const shipping = (shippingConfig.enabled && cartTotal >= shippingConfig.minOrder) ? 0 : shippingConfig.fee;
   const total    = cartTotal + shipping;
 
   // Guest info (only used when user is not logged in)
@@ -87,12 +99,26 @@ export default function CheckoutPage() {
   };
 
   // ── Coupon logic ─────────────────────────────────────────────────────────
-  const handleApplyCoupon = () => {
-    if (coupon.toUpperCase() === 'HERITAGE10') {
-      setDiscount(Math.round(total * 0.1));
-      toast.success('Coupon applied! 10% off 🎉');
-    } else {
-      toast.error('Invalid coupon code');
+  const handleApplyCoupon = async () => {
+    if (!coupon.trim()) return;
+    try {
+      const { data } = await api.post('/marketing/coupons/validate', { 
+        code: coupon, 
+        cartValue: cartTotal 
+      });
+      
+      let discValue = 0;
+      if (data.type === 'percentage') {
+        discValue = Math.round(cartTotal * (data.value / 100));
+      } else {
+        discValue = data.value;
+      }
+      
+      setDiscount(discValue);
+      toast.success(`Coupon '${data.code}' applied! ₹${discValue} off 🎉`);
+    } catch (err) {
+      setDiscount(0);
+      toast.error(err.response?.data?.message || 'Invalid or expired coupon');
     }
   };
 

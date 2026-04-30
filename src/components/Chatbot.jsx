@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Chatbot.css';
 
 const FLOW = [
-  { id: 'welcome', bot: "Namaste! 🙏 Welcome to HASHTHAKALA! I'm your personal style assistant. What are you looking for today?", type: 'choice', choices: ['Kurtis', 'Sarees', 'Earrings', 'Bangles', 'Surprise me!'] },
+  { id: 'welcome', bot: "Namaste! 🙏 Welcome to Handkala! I'm your personal style assistant. What are you looking for today?", type: 'choice', choices: ['Kurtis', 'Sarees', 'Earrings', 'Bangles', 'Surprise me!'] },
   { id: 'size', bot: "Lovely choice! What size do you usually wear?", type: 'choice', choices: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size'] },
   { id: 'budget', bot: "Perfect! What's your budget range?", type: 'choice', choices: ['Under ₹500', '₹500 – ₹1,500', '₹1,500 – ₹3,000', '₹3,000 – ₹6,000', '₹6,000+'] },
   { id: 'location', bot: "Great! Which city are you ordering from? We deliver across India 🇮🇳", type: 'input' },
@@ -120,7 +120,7 @@ export default function Chatbot() {
               <Bot size={20} />
             </div>
             <div>
-              <p className="chatbot-header-name">HASHTHAKALA Assistant</p>
+              <p className="chatbot-header-name">Handkala Assistant</p>
               <p className="chatbot-header-status">🟢 Online · Here to help</p>
             </div>
             <button className="chatbot-close" onClick={() => setOpen(false)}><X size={18} /></button>

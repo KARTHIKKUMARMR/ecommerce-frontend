@@ -38,16 +38,6 @@
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
-
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--bg);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-
 img { max-width: 100%; height: auto; display: block; }
 a { text-decoration: none; color: inherit; }
 button { cursor: pointer; font-family: inherit; }
@@ -59,11 +49,30 @@ input, textarea, select { font-family: inherit; }
 ::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
 
 /* ===== TYPOGRAPHY ===== */
-.font-cinzel { font-family: 'Cinzel', serif; }
-.font-crimson { font-family: 'Crimson Pro', serif; }
+:root {
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Outfit', sans-serif;
+  --font-accent: 'Playfair Display', serif;
+}
 
-h1, h2, h3 { font-family: 'Cinzel', serif; color: var(--gold); }
-h4, h5, h6 { font-family: 'Cinzel', serif; color: var(--text-primary); }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 { 
+  font-family: var(--font-heading); 
+  color: var(--gold); 
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.font-accent { font-family: var(--font-accent); }
+.font-heading { font-family: var(--font-heading); }
 
 /* ===== DECORATIVE BORDER PATTERN ===== */
 .ornament-border {

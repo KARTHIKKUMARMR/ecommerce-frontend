@@ -24,6 +24,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
+import AdminMarketing from './pages/admin/AdminMarketing';
 import TrackOrder from './pages/TrackOrder';
 
 import './index.css';
@@ -41,6 +42,7 @@ function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="products" element={<AdminProducts />} />
               <Route path="orders" element={<AdminOrders />} />
+              <Route path="marketing" element={<AdminMarketing />} />
             </Route>
 
             {/* Public routes */}

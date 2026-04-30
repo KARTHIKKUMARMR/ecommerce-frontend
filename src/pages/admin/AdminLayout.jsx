@@ -17,6 +17,7 @@ export default function AdminLayout() {
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/products', label: 'Products', icon: Package },
     { path: '/admin/orders', label: 'Orders', icon: ShoppingBag },
+    { path: '/admin/marketing', label: 'Marketing', icon: Tag },
   ];
 
   return (
@@ -31,7 +32,7 @@ export default function AdminLayout() {
       <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="admin-sidebar-header">
           <Link to="/" className="admin-logo-link">
-            <img src="/logo.png" alt="HASHTHAKALA Logo" className="admin-logo-image" style={{ height: '48px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="Handkala Logo" className="admin-logo-image" style={{ height: '48px', width: 'auto', borderRadius: '4px', objectFit: 'contain' }} />
           </Link>
           <button className="hide-desktop sidebar-close" onClick={() => setSidebarOpen(false)}>
             <X size={20} />

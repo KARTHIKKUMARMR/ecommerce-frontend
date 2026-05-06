@@ -43,6 +43,21 @@ export default function ProductsPage() {
     sort: '',
   });
 
+  // Sync state with URL params (handles navigating between categories)
+  useEffect(() => {
+    setFilters(prev => ({
+      ...prev,
+      category: params.get('category') || '',
+      minPrice: params.get('minPrice') || '',
+      maxPrice: params.get('maxPrice') || '',
+      size: params.get('size') || '',
+      search: params.get('search') || '',
+      sale: params.get('sale') || '',
+      featured: params.get('featured') || '',
+    }));
+    setPage(1);
+  }, [params]);
+
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {

@@ -58,10 +58,10 @@ export default function Footer() {
               {[
                 { to: '/profile', label: 'My Account' },
                 { to: '/track', label: 'Order Tracking' },
-                { to: '#', label: 'Size Guide' },
-                { to: '#', label: 'Return Policy' },
-                { to: '#', label: 'Shipping Info' },
-                { to: '#', label: 'FAQ' },
+                { to: '/size-guide', label: 'Size Guide' },
+                { to: '/return-policy', label: 'Return Policy' },
+                { to: '/shipping-info', label: 'Shipping Info' },
+                { to: '/faq', label: 'FAQ' },
               ].map(l => (
                 <li key={l.label}><Link to={l.to} className="footer-link">{l.label}</Link></li>
               ))}

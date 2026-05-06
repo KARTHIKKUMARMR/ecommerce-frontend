@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingCart, Heart, User, Search, Menu, X, LogOut, Settings, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -33,12 +33,25 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // ─── NAVIGATION FIX: Close all modals when location changes ────────────────
+  const location = useLocation();
+  useEffect(() => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+    setUserMenu(false);
+    console.log(`🚀 Navigation detected to: ${location.pathname}${location.search}`);
+  }, [location]);
+
   const handleSearch = (e) => {
     e.preventDefault();
+    console.log('🔍 Search triggered:', searchQ);
     if (searchQ.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQ.trim())}`);
       setSearchOpen(false);
       setSearchQ('');
+    } else {
+      // If empty search, just close the modal so it doesn't block navigation
+      setSearchOpen(false);
     }
   };
 
@@ -49,6 +62,10 @@ export default function Header() {
     { to: '/products?category=Earrings', label: 'Earrings' },
     { to: '/products?category=Bangles', label: 'Bangles' },
   ];
+
+  const handleNavClick = (label) => {
+    console.log(`🖱️ Nav Link Clicked: ${label}`);
+  };
 
   return (
     <>
@@ -66,14 +83,21 @@ export default function Header() {
         <div className="container">
           <div className="header-inner">
             {/* Logo */}
-            <Link to="/" className="logo">
+            <Link to="/" className="logo" onClick={() => handleNavClick('Logo')}>
               <img src="/logo.png" alt="Handkala Logo" className="logo-image" />
             </Link>
 
             {/* Desktop Nav */}
             <nav className="header-nav hide-mobile">
               {navLinks.map(link => (
-                <Link key={link.to} to={link.to} className="nav-link">{link.label}</Link>
+                <Link 
+                  key={link.to} 
+                  to={link.to} 
+                  className="nav-link"
+                  onClick={() => handleNavClick(link.label)}
+                >
+                  {link.label}
+                </Link>
               ))}
             </nav>
 
@@ -83,11 +107,11 @@ export default function Header() {
                 <Search size={20} />
               </button>
 
-              <Link to="/wishlist" className="icon-btn" aria-label="Wishlist">
+              <Link to="/wishlist" className="icon-btn" aria-label="Wishlist" onClick={() => handleNavClick('Wishlist')}>
                 <Heart size={20} />
               </Link>
 
-              <Link to="/cart" className="icon-btn cart-btn" aria-label="Cart">
+              <Link to="/cart" className="icon-btn cart-btn" aria-label="Cart" onClick={() => handleNavClick('Cart')}>
                 <ShoppingCart size={20} />
                 {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
               </Link>
@@ -122,7 +146,7 @@ export default function Header() {
                   )}
                 </div>
               ) : (
-                <Link to="/login" className="btn btn-primary btn-sm hide-mobile">Sign In</Link>
+                <Link to="/login" className="btn btn-primary btn-sm hide-mobile" onClick={() => handleNavClick('Login')}>Sign In</Link>
               )}
 
               <button className="icon-btn hide-desktop" onClick={() => setMenuOpen(true)}>
@@ -138,7 +162,7 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="mobile-menu-overlay" onClick={() => setMenuOpen(false)}>
+        <div className="mobile-menu-overlay hide-desktop" onClick={() => setMenuOpen(false)}>
           <div className="mobile-menu" onClick={e => e.stopPropagation()}>
             <div className="mobile-menu-header">
               <span className="logo-brand">Handkala</span>

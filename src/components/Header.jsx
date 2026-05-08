@@ -58,9 +58,9 @@ export default function Header() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/products?category=Sarees', label: 'Sarees' },
-    { to: '/products?category=Kurtis', label: 'Kurtis' },
-    { to: '/products?category=Earrings', label: 'Earrings' },
-    { to: '/products?category=Bangles', label: 'Bangles' },
+    { to: '/products?category=Dupattas', label: 'Dupattas' },
+    { to: '/products?category=Dress Materials', label: 'Dress Materials' },
+    { to: '/products?category=Running Fabric', label: 'Running Fabric' },
   ];
 
   const handleNavClick = (label) => {

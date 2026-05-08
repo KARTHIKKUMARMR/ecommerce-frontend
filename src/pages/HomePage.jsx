@@ -6,10 +6,17 @@ import ProductCard from '../components/ProductCard';
 import './HomePage.css';
 
 const STATIC_CATEGORIES = [
-  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon' },
-  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown' },
-  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold' },
-  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta' },
+  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon', fallbackImg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600' },
+  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown', fallbackImg: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600' },
+  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold', fallbackImg: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600' },
+  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta', fallbackImg: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600' },
+];
+
+const STATIC_HERO_SLIDES = [
+  { title: 'Royal Heritage', subtitle: 'Kanjivaram & Banarasi Sarees', tag: 'New Collection', bg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600', link: '/products?category=Sarees' },
+  { title: 'Elegant Dupattas', subtitle: 'Banarasi, Silk & Cotton', tag: 'Festive Special', bg: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=1600', link: '/products?category=Dupattas' },
+  { title: 'Premium Dress Materials', subtitle: 'Unstitched Suits & Sets', tag: 'Handcrafted', bg: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=1600', link: '/products?category=Dress Materials' },
+  { title: 'Authentic Fabrics', subtitle: 'Ikat, Kalamkari & More', tag: 'Exclusive', bg: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=1600', link: '/products?category=Running Fabric' },
 ];
 
 const FEATURES = [
@@ -24,7 +31,7 @@ export default function HomePage() {
   const [sale, setSale] = useState([]);
   const [collections, setCollections] = useState([]);
   const [categories, setCategories] = useState(STATIC_CATEGORIES);
-  const [heroSlides, setHeroSlides] = useState([]);
+  const [heroSlides, setHeroSlides] = useState(STATIC_HERO_SLIDES);
   const [heroSlide, setHeroSlide] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -58,13 +65,17 @@ export default function HomePage() {
         // 1. DYNAMIC HERO SLIDES
         // Use featured products, if none use latest products
         const sourceForHero = featuredProducts.length > 0 ? featuredProducts : latestProducts;
-        const dynamicSlides = sourceForHero.slice(0, 4).map(p => ({
+        let dynamicSlides = sourceForHero.slice(0, 4).map(p => ({
           title: p.name,
           subtitle: p.category,
           tag: p.isFeatured ? 'Featured Pick' : 'New Arrival',
           bg: p.images?.[0] || '', // dynamic background from MongoDB/Cloudinary
           link: `/products/${p._id}`
         })).filter(s => s.bg); // only include products that have images
+        
+        if (dynamicSlides.length === 0) {
+          dynamicSlides = STATIC_HERO_SLIDES;
+        }
         
         setHeroSlides(dynamicSlides);
 
@@ -74,7 +85,7 @@ export default function HomePage() {
           const latestForCat = latestProducts.find(p => p.category === cat.name && p.images?.length > 0);
           return {
             ...cat,
-            img: latestForCat ? latestForCat.images[0] : '' // dynamic image!
+            img: latestForCat ? latestForCat.images[0] : cat.fallbackImg // dynamic image or fallback
           };
         });
         setCategories(dynamicCategories);
@@ -165,7 +176,7 @@ export default function HomePage() {
           <h2 className="section-title">Our Collections</h2>
           <div className="ornament-divider">⬥ ⬦ ⬥ ⬦ ⬥</div>
           <div className="categories-grid">
-            {categories.filter(cat => cat.img).map(cat => (
+            {categories.map(cat => (
               <Link key={cat.name} to={`/products?category=${cat.name}`} className="category-card">
                 <div className="cat-img-wrap">
                   <img src={cat.img} alt={cat.name} className="cat-img" loading="lazy" />

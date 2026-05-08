@@ -26,6 +26,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState(STATIC_CATEGORIES);
   const [heroSlides, setHeroSlides] = useState([]);
   const [heroSlide, setHeroSlide] = useState(0);
+  const [loading, setLoading] = useState(true);
 
 
 

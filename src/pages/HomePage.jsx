@@ -5,11 +5,11 @@ import api from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import './HomePage.css';
 
-const CATEGORIES = [
-  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400' },
-  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown', img: '/images/cat_kurti.png' },
-  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400' },
-  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta', img: '/images/cat_bangles.png' },
+const STATIC_CATEGORIES = [
+  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon' },
+  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown' },
+  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold' },
+  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta' },
 ];
 
 const FEATURES = [
@@ -23,32 +23,60 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [sale, setSale] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState(STATIC_CATEGORIES);
+  const [heroSlides, setHeroSlides] = useState([]);
   const [heroSlide, setHeroSlide] = useState(0);
 
-  const HERO_SLIDES = [
-    { title: 'Royal Heritage', subtitle: 'Kanjivaram & Banarasi Sarees', tag: 'New Collection', bg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600', link: '/products?category=Sarees' },
-    { title: 'Artisan Kurtis', subtitle: 'Embroidered & Mirror Work', tag: 'Festive Special', bg: '/images/hero_kurti.png', link: '/products?category=Kurtis' },
-    { title: 'Temple Jewels', subtitle: 'Kundan, Meenakari & More', tag: 'Handcrafted Earrings', bg: '/images/hero_earrings.png', link: '/products?category=Earrings' },
-    { title: 'Elegant Bangles', subtitle: 'Lac, Gold-Plated & Designer', tag: 'Bridal Exclusive', bg: '/images/hero_bangles.png', link: '/products?category=Bangles' },
-  ];
+
 
   useEffect(() => {
-    const interval = setInterval(() => setHeroSlide(s => (s + 1) % HERO_SLIDES.length), 5000);
+    if (heroSlides.length === 0) return;
+    const interval = setInterval(() => setHeroSlide(s => (s + 1) % heroSlides.length), 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featRes, saleRes, colRes] = await Promise.all([
-          api.get('/products?featured=true&limit=8'),
-          api.get('/products?sale=true&limit=4'),
-          api.get('/collections/public'),
+        // Fetch data with cache-busting parameter to prevent stale data
+        const t = Date.now();
+        const [featRes, saleRes, colRes, latestRes] = await Promise.all([
+          api.get(`/products?featured=true&limit=8&_t=${t}`),
+          api.get(`/products?sale=true&limit=4&_t=${t}`),
+          api.get(`/collections/public?_t=${t}`),
+          api.get(`/products?limit=20&_t=${t}`) // Get latest products to populate categories and hero fallback
         ]);
-        setFeatured(featRes.data.products);
-        setSale(saleRes.data.products);
-        setCollections(colRes.data);
+        
+        const featuredProducts = featRes.data.products || [];
+        const latestProducts = latestRes.data.products || [];
+        
+        setFeatured(featuredProducts);
+        setSale(saleRes.data.products || []);
+        setCollections(colRes.data || []);
+        
+        // 1. DYNAMIC HERO SLIDES
+        // Use featured products, if none use latest products
+        const sourceForHero = featuredProducts.length > 0 ? featuredProducts : latestProducts;
+        const dynamicSlides = sourceForHero.slice(0, 4).map(p => ({
+          title: p.name,
+          subtitle: p.category,
+          tag: p.isFeatured ? 'Featured Pick' : 'New Arrival',
+          bg: p.images?.[0] || '', // dynamic background from MongoDB/Cloudinary
+          link: `/products/${p._id}`
+        })).filter(s => s.bg); // only include products that have images
+        
+        setHeroSlides(dynamicSlides);
+
+        // 2. DYNAMIC CATEGORY IMAGES
+        // Map over static categories and attach the latest product image for that category
+        const dynamicCategories = STATIC_CATEGORIES.map(cat => {
+          const latestForCat = latestProducts.find(p => p.category === cat.name && p.images?.length > 0);
+          return {
+            ...cat,
+            img: latestForCat ? latestForCat.images[0] : '' // dynamic image!
+          };
+        });
+        setCategories(dynamicCategories);
       } catch (err) {
         console.error('Failed to load featured products', err);
       } finally {
@@ -58,57 +86,59 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  const slide = HERO_SLIDES[heroSlide];
+  const slide = heroSlides.length > 0 ? heroSlides[heroSlide] : null;
 
   return (
     <div className="home-page">
       {/* ===== HERO SECTION ===== */}
-      <section className="hero">
-        {/* Background Images Crossfade */}
-        {HERO_SLIDES.map((s, i) => (
-          <div 
-            key={i}
-            className="hero-bg-layer"
-            style={{ 
-              backgroundImage: `url(${s.bg})`,
-              opacity: i === heroSlide ? 1 : 0
-            }}
-          />
-        ))}
-        
-        <div className="hero-overlay" />
-        <div className="hero-pattern" />
-        {/* Elephant SVG decorations */}
-        <div className="hero-deco hero-deco-left">🐘</div>
-        <div className="hero-deco hero-deco-right">🐘</div>
-
-        <div className="container hero-content">
-          <span className="hero-tag fade-in" key={`tag-${heroSlide}`}><Sparkles size={14} /> {slide.tag}</span>
-          <h1 className="hero-title" key={`title-${heroSlide}`}>{slide.title}</h1>
-          <div className="hero-divider" key={`div-${heroSlide}`}>⬥ ⬦ ⬥ ⬦ ⬥</div>
-          <p className="hero-subtitle" key={`sub-${heroSlide}`}>{slide.subtitle}</p>
-          <p className="hero-desc font-crimson" key={`desc-${heroSlide}`}>
-            Handkala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Handkala is vowed to provide eco-friendly swadeshi products
-          </p>
-          <div className="hero-ctas" key={`cta-${heroSlide}`}>
-            <Link to={slide.link} className="btn btn-primary btn-lg">Shop Now <ChevronRight size={18} /></Link>
-            <Link to="/products" className="btn btn-outline btn-lg">Explore All</Link>
-          </div>
-        </div>
-
-        {/* Slide dots */}
-        <div className="hero-dots">
-          {HERO_SLIDES.map((_, i) => (
-            <button key={i} className={`hero-dot ${i === heroSlide ? 'active' : ''}`} onClick={() => setHeroSlide(i)} />
+      {heroSlides.length > 0 && (
+        <section className="hero">
+          {/* Background Images Crossfade */}
+          {heroSlides.map((s, i) => (
+            <div 
+              key={i}
+              className="hero-bg-layer"
+              style={{ 
+                backgroundImage: `url(${s.bg})`,
+                opacity: i === heroSlide ? 1 : 0
+              }}
+            />
           ))}
-        </div>
+          
+          <div className="hero-overlay" />
+          <div className="hero-pattern" />
+          {/* Elephant SVG decorations */}
+          <div className="hero-deco hero-deco-left">🐘</div>
+          <div className="hero-deco hero-deco-right">🐘</div>
 
-        {/* Scroll indicator */}
-        <div className="hero-scroll">
-          <div className="scroll-line" />
-          <span>Scroll</span>
-        </div>
-      </section>
+          <div className="container hero-content">
+            <span className="hero-tag fade-in" key={`tag-${heroSlide}`}><Sparkles size={14} /> {slide?.tag}</span>
+            <h1 className="hero-title" key={`title-${heroSlide}`}>{slide?.title}</h1>
+            <div className="hero-divider" key={`div-${heroSlide}`}>⬥ ⬦ ⬥ ⬦ ⬥</div>
+            <p className="hero-subtitle" key={`sub-${heroSlide}`}>{slide?.subtitle}</p>
+            <p className="hero-desc font-crimson" key={`desc-${heroSlide}`}>
+              Handkala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Handkala is vowed to provide eco-friendly swadeshi products
+            </p>
+            <div className="hero-ctas" key={`cta-${heroSlide}`}>
+              <Link to={slide?.link || '/products'} className="btn btn-primary btn-lg">Shop Now <ChevronRight size={18} /></Link>
+              <Link to="/products" className="btn btn-outline btn-lg">Explore All</Link>
+            </div>
+          </div>
+
+          {/* Slide dots */}
+          <div className="hero-dots">
+            {heroSlides.map((_, i) => (
+              <button key={i} className={`hero-dot ${i === heroSlide ? 'active' : ''}`} onClick={() => setHeroSlide(i)} />
+            ))}
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="hero-scroll">
+            <div className="scroll-line" />
+            <span>Scroll</span>
+          </div>
+        </section>
+      )}
 
       {/* ===== FEATURES BAR ===== */}
       <section className="features-bar">
@@ -134,7 +164,7 @@ export default function HomePage() {
           <h2 className="section-title">Our Collections</h2>
           <div className="ornament-divider">⬥ ⬦ ⬥ ⬦ ⬥</div>
           <div className="categories-grid">
-            {CATEGORIES.map(cat => (
+            {categories.filter(cat => cat.img).map(cat => (
               <Link key={cat.name} to={`/products?category=${cat.name}`} className="category-card">
                 <div className="cat-img-wrap">
                   <img src={cat.img} alt={cat.name} className="cat-img" loading="lazy" />

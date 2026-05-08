@@ -6,10 +6,10 @@ import ProductCard from '../components/ProductCard';
 import './HomePage.css';
 
 const STATIC_CATEGORIES = [
-  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon', fallbackImg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600' },
-  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown', fallbackImg: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600' },
-  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold', fallbackImg: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600' },
-  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta', fallbackImg: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600' },
+  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600', fallbackImg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600' },
+  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown', img: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600', fallbackImg: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600' },
+  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600', fallbackImg: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600' },
+  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta', img: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600', fallbackImg: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600' },
 ];
 
 const STATIC_HERO_SLIDES = [
@@ -46,21 +46,22 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data with cache-busting parameter to prevent stale data
+        // Fetch data with individual error handling to prevent one failure from breaking everything
         const t = Date.now();
-        const [featRes, saleRes, colRes, latestRes] = await Promise.all([
+        
+        const [featRes, saleRes, colRes, latestRes] = await Promise.allSettled([
           api.get(`/products?featured=true&limit=8&_t=${t}`),
           api.get(`/products?sale=true&limit=4&_t=${t}`),
           api.get(`/collections/public?_t=${t}`),
-          api.get(`/products?limit=20&_t=${t}`) // Get latest products to populate categories and hero fallback
+          api.get(`/products?limit=100&_t=${t}`) // Fetch more to ensure we find Cloudinary images
         ]);
         
-        const featuredProducts = featRes.data.products || [];
-        const latestProducts = latestRes.data.products || [];
+        const featuredProducts = featRes.status === 'fulfilled' ? (featRes.value.data.products || []) : [];
+        const latestProducts = latestRes.status === 'fulfilled' ? (latestRes.value.data.products || []) : [];
         
         setFeatured(featuredProducts);
-        setSale(saleRes.data.products || []);
-        setCollections(colRes.data || []);
+        setSale(saleRes.status === 'fulfilled' ? (saleRes.value.data.products || []) : []);
+        setCollections(colRes.status === 'fulfilled' ? (colRes.value.data || []) : []);
         
         // 1. DYNAMIC HERO SLIDES
         // Use featured products, if none use latest products
@@ -182,7 +183,7 @@ export default function HomePage() {
               <Link key={cat.name} to={`/products?category=${cat.name}`} className="category-card">
                 <div className="cat-img-wrap">
                   <img 
-                    src={cat.img} 
+                    src={cat.img || cat.fallbackImg} 
                     alt={cat.name} 
                     className="cat-img" 
                     loading="lazy" 

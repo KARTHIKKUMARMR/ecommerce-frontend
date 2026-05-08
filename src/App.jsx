@@ -26,6 +26,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminMarketing from './pages/admin/AdminMarketing';
+import AdminCollections from './pages/admin/AdminCollections';
 import TrackOrder from './pages/TrackOrder';
 import SizeGuide from './pages/SizeGuide';
 import ReturnPolicy from './pages/ReturnPolicy';
@@ -62,6 +63,7 @@ function App() {
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="marketing" element={<AdminMarketing />} />
+                <Route path="collections" element={<AdminCollections />} />
               </Route>
 
               {/* Public routes wrapped in MainLayout */}

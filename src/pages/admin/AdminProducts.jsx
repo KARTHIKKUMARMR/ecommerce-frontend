@@ -333,9 +333,9 @@ export default function AdminProducts() {
                   <label className="form-label">Category *</label>
                   <select className="form-input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                     <option>Sarees</option>
-                    <option>Kurtis</option>
-                    <option>Earrings</option>
-                    <option>Bangles</option>
+                    <option>Dupattas</option>
+                    <option>Dress Materials</option>
+                    <option>Running Fabric</option>
                   </select>
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>

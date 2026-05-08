@@ -39,9 +39,9 @@ export default function Footer() {
             <ul className="footer-links">
               {[
                 { to: '/products?category=Sarees', label: 'Sarees' },
-                { to: '/products?category=Kurtis', label: 'Kurtis' },
-                { to: '/products?category=Earrings', label: 'Earrings' },
-                { to: '/products?category=Bangles', label: 'Bangles' },
+                { to: '/products?category=Dupattas', label: 'Dupattas' },
+                { to: '/products?category=Dress Materials', label: 'Dress Materials' },
+                { to: '/products?category=Running Fabric', label: 'Running Fabric' },
                 { to: '/products?sale=true', label: 'Sale & Offers' },
                 { to: '/products?featured=true', label: 'Featured Picks' },
               ].map(l => (
@@ -94,10 +94,6 @@ export default function Footer() {
                   <span className="contact-value">Srikalahasthi, Andhra Pradesh, India</span>
                 </div>
               </div>
-            </div>
-            <div className="business-id">
-              <span className="bid-label">Business ID:</span>
-              <span className="bid-value">BN-2024-IN-007</span>
             </div>
           </div>
         </div>

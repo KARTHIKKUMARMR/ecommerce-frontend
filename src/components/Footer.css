@@ -127,20 +127,7 @@
 .contact-value { font-size: 0.85rem; color: rgba(253, 253, 251, 0.9); transition: var(--transition); }
 .contact-value:hover { color: var(--gold-light); }
 
-.business-id {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: rgba(253, 253, 251, 0.05);
-  border: 1px dashed rgba(253, 253, 251, 0.2);
-  border-radius: var(--radius);
-}
-.bid-label { font-size: 0.72rem; color: rgba(253, 253, 251, 0.7); }
-.bid-value { font-size: 0.82rem; color: var(--gold-light); font-weight: 600; font-family: 'Cinzel', serif; }
 
-/* Newsletter */
 .footer-newsletter {
   margin: 0 0 40px;
   border-top: 1px solid rgba(253, 253, 251, 0.1);

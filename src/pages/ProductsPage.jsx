@@ -5,7 +5,7 @@ import api from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import './ProductsPage.css';
 
-const CATEGORIES = ['Sarees', 'Kurtis', 'Earrings', 'Bangles'];
+const CATEGORIES = ['Sarees', 'Dupattas', 'Dress Materials', 'Running Fabric'];
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free Size', '2.2', '2.4', '2.6', '2.8'];
 const SORT_OPTIONS = [
   { value: '', label: 'Newest First' },
@@ -174,22 +174,7 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            {/* Size (Only for Kurtis) */}
-            {filters.category === 'Kurtis' && (
-              <div className="filter-group">
-                <h4 className="filter-group-title">Size</h4>
-                <div className="size-grid">
-                  {SIZES.map(s => (
-                    <button key={s}
-                      className={`size-filter-btn ${filters.size === s ? 'active' : ''}`}
-                      onClick={() => updateFilter('size', s)}
-                    >{s}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Special */}
+            {/* Size */}
             <div className="filter-group">
               <h4 className="filter-group-title">Special</h4>
               <label className="filter-option">

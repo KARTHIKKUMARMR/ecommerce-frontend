@@ -18,6 +18,7 @@ export default function AdminLayout() {
     { path: '/admin/products', label: 'Products', icon: Package },
     { path: '/admin/orders', label: 'Orders', icon: ShoppingBag },
     { path: '/admin/marketing', label: 'Marketing', icon: Tag },
+    { path: '/admin/collections', label: 'Collections', icon: Package },
   ];
 
   return (

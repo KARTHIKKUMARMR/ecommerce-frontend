@@ -7,9 +7,9 @@ import './HomePage.css';
 
 const CATEGORIES = [
   { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400' },
-  { name: 'Kurtis', icon: '👗', desc: 'Anarkali, Straight & More', gradient: 'from-brown', img: '/images/cat_kurti.png' },
-  { name: 'Earrings', icon: '💎', desc: 'Kundan, Jhumka & Pearl', gradient: 'from-gold', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400' },
-  { name: 'Bangles', icon: '⭕', desc: 'Lac, Gold-Plated & More', gradient: 'from-terracotta', img: '/images/cat_bangles.png' },
+  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown', img: '/images/cat_kurti.png' },
+  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400' },
+  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta', img: '/images/cat_bangles.png' },
 ];
 
 const FEATURES = [
@@ -22,6 +22,7 @@ const FEATURES = [
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [sale, setSale] = useState([]);
+  const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [heroSlide, setHeroSlide] = useState(0);
 
@@ -40,12 +41,14 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featRes, saleRes] = await Promise.all([
+        const [featRes, saleRes, colRes] = await Promise.all([
           api.get('/products?featured=true&limit=8'),
           api.get('/products?sale=true&limit=4'),
+          api.get('/collections/public'),
         ]);
         setFeatured(featRes.data.products);
         setSale(saleRes.data.products);
+        setCollections(colRes.data);
       } catch (err) {
         console.error('Failed to load featured products', err);
       } finally {
@@ -149,27 +152,38 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== OFFER BANNER ===== */}
-      <section className="offer-banner">
-        <div className="container">
-          <div className="offer-grid">
-            <div className="offer-card offer-card-1">
-              <div className="offer-badge"><Tag size={14} /> Limited Time</div>
-              <h3>Festive Season Sale</h3>
-              <p className="offer-discount">Up to <span>50% OFF</span></p>
-              <p className="offer-desc">On selected Sarees & Kurtis</p>
-              <Link to="/products?sale=true" className="btn btn-primary btn-sm">Shop Sale</Link>
-            </div>
-            <div className="offer-card offer-card-2">
-              <div className="offer-badge"><Sparkles size={14} /> New Arrival</div>
-              <h3>Wedding Collection</h3>
-              <p className="offer-discount">Starting at <span>₹1,299</span></p>
-              <p className="offer-desc">Premium Kanjivaram & Banarasi</p>
-              <Link to="/products?category=Sarees" className="btn btn-outline btn-sm">Explore</Link>
+      {/* ===== DYNAMIC COLLECTIONS ===== */}
+      {collections.length > 0 && (
+        <section className="offer-banner">
+          <div className="container">
+            <div className="offer-grid">
+              {collections.map((col, idx) => {
+                const bgImage = col.bannerImage || col.dynamicBannerImage || '';
+                const linkUrl = col.autoUpdateByCategory 
+                  ? `/products?category=${col.autoUpdateByCategory}` 
+                  : col.autoUpdateByTag 
+                    ? `/products?search=${col.autoUpdateByTag}` 
+                    : `/products`;
+
+                return (
+                  <div key={col._id} className={`offer-card offer-card-${(idx % 2) + 1}`} style={bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', color: 'white' } : {}}>
+                    {bgImage && <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,0.85), rgba(0,0,0,0.4))', zIndex: 0 }} />}
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      {col.type && col.type !== 'Other' && <div className="offer-badge"><Tag size={14} /> {col.type}</div>}
+                      <h3>{col.name}</h3>
+                      {col.offerText && <p className="offer-discount"><span>{col.offerText}</span></p>}
+                      {col.description && <p className="offer-desc" style={{ color: 'rgba(255,255,255,0.9)' }}>{col.description}</p>}
+                      <Link to={linkUrl} className={`btn ${idx % 2 === 0 ? 'btn-primary' : 'btn-outline'} btn-sm`} style={bgImage && idx % 2 !== 0 ? { borderColor: 'white', color: 'white' } : {}}>
+                        Explore
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ===== FEATURED PRODUCTS ===== */}
       <section className="section">

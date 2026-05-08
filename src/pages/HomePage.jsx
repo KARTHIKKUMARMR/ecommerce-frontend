@@ -69,9 +69,9 @@ export default function HomePage() {
           title: p.name,
           subtitle: p.category,
           tag: p.isFeatured ? 'Featured Pick' : 'New Arrival',
-          bg: p.images?.[0] || '', // dynamic background from MongoDB/Cloudinary
+          bg: p.images?.find(img => img.startsWith('http')) || p.images?.[0] || '', // Prefer Cloudinary images
           link: `/products/${p._id}`
-        })).filter(s => s.bg); // only include products that have images
+        })).filter(s => s.bg && s.bg.startsWith('http')); // only include products with valid external images
         
         if (dynamicSlides.length === 0) {
           dynamicSlides = STATIC_HERO_SLIDES;
@@ -82,10 +82,12 @@ export default function HomePage() {
         // 2. DYNAMIC CATEGORY IMAGES
         // Map over static categories and attach the latest product image for that category
         const dynamicCategories = STATIC_CATEGORIES.map(cat => {
-          const latestForCat = latestProducts.find(p => p.category === cat.name && p.images?.length > 0);
+          // Find the latest product for this category that has an external (Cloudinary) image
+          const latestForCat = latestProducts.find(p => p.category === cat.name && p.images?.length > 0 && p.images.some(img => img.startsWith('http')));
+          const cloudinaryImg = latestForCat?.images.find(img => img.startsWith('http'));
           return {
             ...cat,
-            img: latestForCat ? latestForCat.images[0] : cat.fallbackImg // dynamic image or fallback
+            img: cloudinaryImg || cat.fallbackImg // dynamic image or fallback
           };
         });
         setCategories(dynamicCategories);
@@ -179,7 +181,13 @@ export default function HomePage() {
             {categories.map(cat => (
               <Link key={cat.name} to={`/products?category=${cat.name}`} className="category-card">
                 <div className="cat-img-wrap">
-                  <img src={cat.img} alt={cat.name} className="cat-img" loading="lazy" />
+                  <img 
+                    src={cat.img} 
+                    alt={cat.name} 
+                    className="cat-img" 
+                    loading="lazy" 
+                    onError={(e) => { e.target.onerror = null; e.target.src = cat.fallbackImg; }} 
+                  />
                   <div className="cat-overlay" />
                 </div>
                 <div className="cat-info">

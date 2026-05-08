@@ -5,18 +5,26 @@ import api from '../utils/api';
 import ProductCard from '../components/ProductCard';
 import './HomePage.css';
 
-const STATIC_CATEGORIES = [
-  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer', gradient: 'from-maroon', img: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600', fallbackImg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600' },
-  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton', gradient: 'from-brown', img: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600', fallbackImg: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600' },
-  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets', gradient: 'from-gold', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600', fallbackImg: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600' },
-  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More', gradient: 'from-terracotta', img: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600', fallbackImg: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600' },
-];
-
-const STATIC_HERO_SLIDES = [
+// ── FALLBACK IMAGES (only used when database has ZERO products) ──────────────
+const FALLBACK_HERO_SLIDES = [
   { title: 'Royal Heritage', subtitle: 'Kanjivaram & Banarasi Sarees', tag: 'New Collection', bg: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=1600', link: '/products?category=Sarees' },
   { title: 'Elegant Dupattas', subtitle: 'Banarasi, Silk & Cotton', tag: 'Festive Special', bg: 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=1600', link: '/products?category=Dupattas' },
   { title: 'Premium Dress Materials', subtitle: 'Unstitched Suits & Sets', tag: 'Handcrafted', bg: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=1600', link: '/products?category=Dress Materials' },
   { title: 'Authentic Fabrics', subtitle: 'Ikat, Kalamkari & More', tag: 'Exclusive', bg: 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=1600', link: '/products?category=Running Fabric' },
+];
+
+const FALLBACK_CATEGORY_IMAGES = {
+  'Sarees': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600',
+  'Dupattas': 'https://images.unsplash.com/photo-1583391733958-d25e07fac661?w=600',
+  'Dress Materials': 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600',
+  'Running Fabric': 'https://images.unsplash.com/photo-1605001068864-4e2a3922f2b3?w=600',
+};
+
+const CATEGORY_META = [
+  { name: 'Sarees', icon: '🥻', desc: 'Silk, Cotton & Designer' },
+  { name: 'Dupattas', icon: '🧣', desc: 'Banarasi, Silk & Cotton' },
+  { name: 'Dress Materials', icon: '👗', desc: 'Unstitched Suits & Sets' },
+  { name: 'Running Fabric', icon: '🧵', desc: 'Ikat, Kalamkari & More' },
 ];
 
 const FEATURES = [
@@ -30,70 +38,86 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [sale, setSale] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [categories, setCategories] = useState(STATIC_CATEGORIES);
-  const [heroSlides, setHeroSlides] = useState(STATIC_HERO_SLIDES);
+  const [categories, setCategories] = useState(
+    CATEGORY_META.map(c => ({ ...c, img: FALLBACK_CATEGORY_IMAGES[c.name] }))
+  );
+  const [heroSlides, setHeroSlides] = useState(FALLBACK_HERO_SLIDES);
   const [heroSlide, setHeroSlide] = useState(0);
   const [loading, setLoading] = useState(true);
 
-
-
+  // ── Auto-rotate hero slides ────────────────────────────────────────────────
   useEffect(() => {
     if (heroSlides.length === 0) return;
     const interval = setInterval(() => setHeroSlide(s => (s + 1) % heroSlides.length), 5000);
     return () => clearInterval(interval);
   }, [heroSlides.length]);
 
+  // ── Fetch ALL dynamic data ─────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch data with individual error handling to prevent one failure from breaking everything
-        const t = Date.now();
-        
-        const [featRes, saleRes, colRes, latestRes] = await Promise.allSettled([
+        const t = Date.now(); // cache-buster
+
+        // Use Promise.allSettled so one failure doesn't break everything
+        const [heroRes, catRes, featRes, saleRes, colRes] = await Promise.allSettled([
+          api.get(`/products/hero?_t=${t}`),
+          api.get(`/products/latest-by-category?_t=${t}`),
           api.get(`/products?featured=true&limit=8&_t=${t}`),
           api.get(`/products?sale=true&limit=4&_t=${t}`),
           api.get(`/collections/public?_t=${t}`),
-          api.get(`/products?limit=100&_t=${t}`) // Fetch more to ensure we find Cloudinary images
         ]);
-        
-        const featuredProducts = featRes.status === 'fulfilled' ? (featRes.value.data.products || []) : [];
-        const latestProducts = latestRes.status === 'fulfilled' ? (latestRes.value.data.products || []) : [];
-        
-        setFeatured(featuredProducts);
-        setSale(saleRes.status === 'fulfilled' ? (saleRes.value.data.products || []) : []);
-        setCollections(colRes.status === 'fulfilled' ? (colRes.value.data || []) : []);
-        
-        // 1. DYNAMIC HERO SLIDES
-        // Use featured products, if none use latest products
-        const sourceForHero = featuredProducts.length > 0 ? featuredProducts : latestProducts;
-        let dynamicSlides = sourceForHero.slice(0, 4).map(p => ({
-          title: p.name,
-          subtitle: p.category,
-          tag: p.isFeatured ? 'Featured Pick' : 'New Arrival',
-          bg: p.images?.find(img => img.startsWith('http')) || p.images?.[0] || '', // Prefer Cloudinary images
-          link: `/products/${p._id}`
-        })).filter(s => s.bg && s.bg.startsWith('http')); // only include products with valid external images
-        
-        if (dynamicSlides.length === 0) {
-          dynamicSlides = STATIC_HERO_SLIDES;
-        }
-        
-        setHeroSlides(dynamicSlides);
 
-        // 2. DYNAMIC CATEGORY IMAGES
-        // Map over static categories and attach the latest product image for that category
-        const dynamicCategories = STATIC_CATEGORIES.map(cat => {
-          // Find the latest product for this category that has an external (Cloudinary) image
-          const latestForCat = latestProducts.find(p => p.category === cat.name && p.images?.length > 0 && p.images.some(img => img.startsWith('http')));
-          const cloudinaryImg = latestForCat?.images.find(img => img.startsWith('http'));
-          return {
-            ...cat,
-            img: cloudinaryImg || cat.fallbackImg // dynamic image or fallback
-          };
-        });
-        setCategories(dynamicCategories);
+        // ── 1. DYNAMIC HERO SLIDER ──────────────────────────────────────────
+        if (heroRes.status === 'fulfilled') {
+          const heroProducts = heroRes.value.data.heroProducts || [];
+          console.log('[HomePage] Hero products received:', heroProducts.length, heroProducts.map(p => p.name));
+
+          if (heroProducts.length > 0) {
+            const dynamicSlides = heroProducts.map(p => ({
+              title: p.name,
+              subtitle: p.category,
+              tag: p.isFeatured ? 'Featured Pick' : 'New Arrival',
+              bg: p.image, // already filtered to Cloudinary URLs by backend
+              link: `/products/${p._id}`,
+            }));
+            setHeroSlides(dynamicSlides);
+            setHeroSlide(0); // Reset to first slide
+            console.log('[HomePage] Dynamic hero slides set:', dynamicSlides.map(s => s.title));
+          } else {
+            console.log('[HomePage] No dynamic hero products found, using fallback slides');
+            setHeroSlides(FALLBACK_HERO_SLIDES);
+          }
+        } else {
+          console.error('[HomePage] Hero API failed:', heroRes.reason);
+        }
+
+        // ── 2. DYNAMIC CATEGORY IMAGES (strict category matching) ───────────
+        if (catRes.status === 'fulfilled') {
+          const catData = catRes.value.data.categories || {};
+          console.log('[HomePage] Category images received:', Object.keys(catData));
+
+          const dynamicCategories = CATEGORY_META.map(meta => {
+            const dbCat = catData[meta.name];
+            const img = dbCat?.image || FALLBACK_CATEGORY_IMAGES[meta.name];
+            console.log(`[HomePage] ${meta.name} → ${dbCat ? dbCat.name : 'FALLBACK'} → ${img?.substring(0, 60)}...`);
+            return { ...meta, img };
+          });
+          setCategories(dynamicCategories);
+        } else {
+          console.error('[HomePage] Category API failed:', catRes.reason);
+        }
+
+        // ── 3. FEATURED PRODUCTS ────────────────────────────────────────────
+        setFeatured(featRes.status === 'fulfilled' ? (featRes.value.data.products || []) : []);
+
+        // ── 4. SALE PRODUCTS ────────────────────────────────────────────────
+        setSale(saleRes.status === 'fulfilled' ? (saleRes.value.data.products || []) : []);
+
+        // ── 5. DYNAMIC COLLECTIONS ──────────────────────────────────────────
+        setCollections(colRes.status === 'fulfilled' ? (colRes.value.data || []) : []);
+
       } catch (err) {
-        console.error('Failed to load featured products', err);
+        console.error('[HomePage] Fatal error during data fetch:', err);
       } finally {
         setLoading(false);
       }
@@ -111,7 +135,7 @@ export default function HomePage() {
           {/* Background Images Crossfade */}
           {heroSlides.map((s, i) => (
             <div 
-              key={i}
+              key={`hero-bg-${i}-${s.bg}`}
               className="hero-bg-layer"
               style={{ 
                 backgroundImage: `url(${s.bg})`,
@@ -172,7 +196,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== CATEGORIES ===== */}
+      {/* ===== CATEGORIES (Our Collections) ===== */}
       <section className="section temple-pattern">
         <div className="container">
           <p className="section-eyebrow">Shop By</p>
@@ -183,11 +207,11 @@ export default function HomePage() {
               <Link key={cat.name} to={`/products?category=${cat.name}`} className="category-card">
                 <div className="cat-img-wrap">
                   <img 
-                    src={cat.img || cat.fallbackImg} 
+                    src={cat.img} 
                     alt={cat.name} 
                     className="cat-img" 
                     loading="lazy" 
-                    onError={(e) => { e.target.onerror = null; e.target.src = cat.fallbackImg; }} 
+                    onError={(e) => { e.target.onerror = null; e.target.src = FALLBACK_CATEGORY_IMAGES[cat.name]; }} 
                   />
                   <div className="cat-overlay" />
                 </div>
@@ -262,8 +286,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="empty-state">
-              <p>Start your server and seed the database to see products here!</p>
-              <p className="text-muted text-sm">Run: cd backend → npm run seed</p>
+              <p>No featured products yet. Mark products as featured from the admin panel!</p>
             </div>
           )}
 

@@ -111,7 +111,7 @@ export default function AdminMarketing() {
                 rows="2" 
                 value={banner.text} 
                 onChange={e => setBanner({...banner, text: e.target.value})}
-                placeholder="e.g., Free shipping on orders above ₹999 | Use code HANDKALA for 10% off"
+                placeholder="e.g., Free shipping on orders above ₹999 | Use code APSARAS for 10% off"
               />
             </div>
             <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px', marginTop: '10px' }}>

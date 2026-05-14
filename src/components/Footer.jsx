@@ -19,10 +19,10 @@ export default function Footer() {
           {/* Brand column */}
           <div className="footer-brand">
             <div className="footer-logo">
-              <img src="/logo.png" alt="Handkala Logo" className="footer-logo-image" />
+              <img src="/logo.png" alt="ApsarasFashions Logo" className="footer-logo-image" />
             </div>
             <p className="footer-desc">
-              Srikalahasthikala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Srikalahasthikala is vowed to provide eco-friendly swadeshi products
+              ApsarasFashions brings you the finest Indian ethnic hand art on textiles. We have firmly established ourselves with premium sarees, dupattas, dress materials and running fabrics. ApsarasFashions is committed to providing eco-friendly swadeshi products.
             </p>
             <div className="footer-socials">
               <a href="#" className="social-btn" aria-label="Facebook">FB</a>
@@ -107,7 +107,7 @@ export default function Footer() {
       <div className="footer-bottom">
         <div className="container">
           <div className="footer-bottom-inner">
-            <p className="footer-copy">© 2024 Srikalahasthikala. All rights reserved.</p>
+            <p className="footer-copy">© {new Date().getFullYear()} ApsarasFashions. All rights reserved.</p>
             <div className="footer-bottom-links">
               <a href="#" className="footer-link-sm">Privacy Policy</a>
               <span>·</span>

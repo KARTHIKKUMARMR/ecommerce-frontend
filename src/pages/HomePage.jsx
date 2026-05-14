@@ -156,7 +156,7 @@ export default function HomePage() {
             <div className="hero-divider" key={`div-${heroSlide}`}>⬥ ⬦ ⬥ ⬦ ⬥</div>
             <p className="hero-subtitle" key={`sub-${heroSlide}`}>{slide?.subtitle}</p>
             <p className="hero-desc font-crimson" key={`desc-${heroSlide}`}>
-              Handkala is an ancient Indian ethnic hand art on textiles. Tiny wonder we have firmly established ourselves in srikalahasthi. Our collections are premium sarees, Duppattas, dress materials and running fabrics. Handkala is vowed to provide eco-friendly swadeshi products
+              ApsarasFashions brings you the finest Indian ethnic hand art on textiles. We have firmly established ourselves with premium sarees, dupattas, dress materials and running fabrics. ApsarasFashions is committed to providing eco-friendly swadeshi products.
             </p>
             <div className="hero-ctas" key={`cta-${heroSlide}`}>
               <Link to={slide?.link || '/products'} className="btn btn-primary btn-lg">Shop Now <ChevronRight size={18} /></Link>

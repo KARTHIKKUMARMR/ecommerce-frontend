@@ -84,7 +84,7 @@ export default function Header() {
           <div className="header-inner">
             {/* Logo */}
             <Link to="/" className="logo" onClick={() => handleNavClick('Logo')}>
-              <img src="/logo.png" alt="Handkala Logo" className="logo-image" />
+              <img src="/logo.png" alt="ApsarasFashions Logo" className="logo-image" />
             </Link>
 
             {/* Desktop Nav */}
@@ -165,7 +165,7 @@ export default function Header() {
         <div className="mobile-menu-overlay hide-desktop" onClick={() => setMenuOpen(false)}>
           <div className="mobile-menu" onClick={e => e.stopPropagation()}>
             <div className="mobile-menu-header">
-              <span className="logo-brand">Handkala</span>
+              <span className="logo-brand">ApsarasFashions</span>
               <button onClick={() => setMenuOpen(false)}><X size={24} /></button>
             </div>
             <nav className="mobile-nav">

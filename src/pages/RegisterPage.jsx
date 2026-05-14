@@ -94,7 +94,7 @@ export default function RegisterPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data));
 
-      toast.success('🎉 Account verified! Welcome to Handkala!');
+      toast.success('🎉 Account verified! Welcome to ApsarasFashions!');
       // Full reload to re-initialize AuthContext with the new user
       window.location.href = '/';
     } catch (err) {
